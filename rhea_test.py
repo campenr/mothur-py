@@ -57,4 +57,4 @@ class Mothur:
 
 mothur = Mothur()
 # mothur.help()
-mothur.summary.shared(shared='TIO.an.shared')
+mothur.summary.shared(shared='test.shared')
