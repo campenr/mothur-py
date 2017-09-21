@@ -144,11 +144,11 @@ class MothurFunction:
                 # stop scanning for new stdout once iterator is empty
                 break
             except KeyboardInterrupt:
-                # user terminated run so we need to cleanly exit
+                # user terminated run so we need to cleanly exit, returning the unmodified root object
                 # TODO better message here for user
 
                 print('---User terminated execution---')
-                break
+                return self._root
 
             if self._root.display_output:
                 # remove trailing carriage return then print string
