@@ -126,7 +126,7 @@ class MothurFunction:
         # TODO: check that logfile name does not already exist
         random.seed()
         rn = random.randint(10000, 99999)
-        logfile = 'mothur.ipython.%d.logfile' % rn
+        logfile = 'mothur.rhea.%d.logfile' % rn
         commands.insert(0, 'set.logfile(name=%s)' % logfile)
 
         # format commands for mothur execution
@@ -135,15 +135,32 @@ class MothurFunction:
         return_code = None
 
         # run mothur command in command line mode
-        output, error = Popen(['mothur', '#%s' % commands_str], stdout=PIPE, stderr=PIPE).communicate()
+        p = Popen(['mothur', '#%s' % commands_str], stdout=PIPE, stderr=STDOUT)#.communicate()
+
+        while True:
+            try:
+                line = next(p.stdout)
+            except StopIteration:
+                # stop scanning for new stdout once iterator is empty
+                break
+            except KeyboardInterrupt:
+                # user terminated run so we need to cleanly exit
+                # TODO better message here for user
+
+                print('---User terminated execution---')
+                break
+
+            if self._root.display_output:
+                # remove trailing carriage return then print string
+                line = line.replace(b'\r', b'')
+                line = line.rsplit(b'\n')[0]
+                # print(line)
+                print(line.decode())
 
         if self._root.parse_log_file:
             current_files, dirs = self._parse_output(logfile)
         else:
             current_files, dirs = None, None
-
-        if self._root.display_output:
-            self._display_output(base_command, logfile)
 
         self._root.return_code = return_code
         self._root.current_files = current_files
@@ -151,7 +168,6 @@ class MothurFunction:
 
         return self._root
 
-        # print('CALLED: {}(args={}, kwargs={})'.format(self.name, repr(args), repr(kwargs)))
 
     @staticmethod
     def _parse_output(output):
