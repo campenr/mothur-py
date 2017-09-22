@@ -137,25 +137,18 @@ class MothurFunction:
         # run mothur command in command line mode
         p = Popen(['mothur', '#%s' % commands_str], stdout=PIPE, stderr=STDOUT)#.communicate()
 
-        while True:
-            try:
-                line = next(p.stdout)
-            except StopIteration:
-                # stop scanning for new stdout once iterator is empty
-                break
-            except KeyboardInterrupt:
-                # user terminated run so we need to cleanly exit, returning the unmodified root object
-                # TODO better message here for user
+        with p.stdout:
+            for line in iter(p.stdout.readline, b''):
 
-                print('---User terminated execution---')
-                return self._root
+                # conditionally display mothur output
+                if self._root.display_output:
+                    # remove trailing carriage return then print string
+                    line = line.replace(b'\r', b'')
+                    line = line.rsplit(b'\n')[0]
+                    # print(line)
+                    print(line.decode())
 
-            if self._root.display_output:
-                # remove trailing carriage return then print string
-                line = line.replace(b'\r', b'')
-                line = line.rsplit(b'\n')[0]
-                # print(line)
-                print(line.decode())
+        p.wait()  # wait for the subprocess to exit
 
         if self._root.parse_log_file:
             current_files, dirs = self._parse_output(logfile)
