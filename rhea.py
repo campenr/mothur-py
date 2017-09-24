@@ -184,7 +184,7 @@ class MothurFunction:
 
             return_code = p.wait()  # wait for the subprocess to finish
             if return_code != 0:
-                raise(MothurError(''))
+                raise(MothurError('Mothur encounted an error.'))
 
 
         except KeyboardInterrupt:
