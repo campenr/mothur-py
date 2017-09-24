@@ -1,5 +1,7 @@
 from subprocess import call, PIPE, Popen, STDOUT
 import random
+import json
+from pprint import pprint
 
 
 class Mothur:
@@ -9,7 +11,7 @@ class Mothur:
     """
 
     def __init__(self, name='mothur', current_files=None, current_dirs=None, parse_current_file=False,
-                 parse_log_file=False, display_output=False):
+                 parse_log_file=False, display_output=False, verbosity=0):
         """
 
         :param name: name of the mothur object
@@ -33,6 +35,8 @@ class Mothur:
         self.parse_log_file = parse_log_file
         self.display_output = display_output
 
+        self.verbosity = verbosity
+
     def __getattr__(self, name):
         """Catches unknown method calls to run them as mothur functions instead."""
 
@@ -40,6 +44,9 @@ class Mothur:
             return MothurFunction(self, self, name)
 
         raise (AttributeError('{} is not a valid mothur function.'.format(name)))
+
+    def __repr__(self):
+        return '%s' % vars(self)
 
 
 class MothurFunction:
@@ -132,35 +139,68 @@ class MothurFunction:
         # format commands for mothur execution
         commands_str = '; '.join(commands)
 
-        return_code = None
+        # output flags
+        user_input_flag = False
+        mothur_error_flag = False
+
+        # setup byte encoded strings for conditional printing
+        base_command_bytes = base_command.encode()
+        get_current_bytes = 'mothur > get.current()'.encode()
+        mothur_warning_bytes = '<<<'.encode()
+        mothur_error_bytes = '***'.encode()
 
         # run mothur command in command line mode
-        p = Popen(['mothur', '#%s' % commands_str], stdout=PIPE, stderr=STDOUT)#.communicate()
+        p = Popen(['mothur', '#%s' % commands_str], stdout=PIPE, stderr=STDOUT)
 
-        with p.stdout:
-            for line in iter(p.stdout.readline, b''):
+        try:
+            with p.stdout:
+                for line in iter(p.stdout.readline, b''):
 
-                # conditionally display mothur output
-                if self._root.display_output:
-                    # remove trailing carriage return then print string
-                    line = line.replace(b'\r', b'')
-                    line = line.rsplit(b'\n')[0]
-                    # print(line)
-                    print(line.decode())
+                    # check for valid verbosity setting
+                    if 0 <= self._root.verbosity < 3:
 
-        p.wait()  # wait for the subprocess to exit
+                        # only print output if verbosity not zero
+                        if 1 <= self._root.verbosity < 3:
+                            # strip newline characters as print statement will insert its own
+                            line = line.replace(b'\r', b'')
+                            line = line.rsplit(b'\n')[0]
 
+                            # conditionally set user_input_flag
+                            if base_command_bytes in line:
+                                user_input_flag = True
+                            elif get_current_bytes in line:
+                                user_input_flag = False
+
+                            # conditionally set mothur_error_flag
+                            if mothur_warning_bytes in line or mothur_error_bytes in line:
+                                mothur_error_flag = True
+
+                        if self._root.verbosity == 1:
+                            if any([user_input_flag, mothur_error_flag]):
+                                print(line.decode())
+                        elif self._root.verbosity == 2:
+                            print(line.decode())
+
+                    else:
+                        raise(ValueError('verbosity must be 0, 1, or 2.'))
+
+            p.wait()  # wait for the subprocess to finish
+
+        except KeyboardInterrupt:
+            # tidy up running process before raising exception when keyboard interrupt detected
+            p.terminate()
+            raise(KeyboardInterrupt('User terminated process.'))
+
+        # TODO parse output files from stdout
         if self._root.parse_log_file:
             current_files, dirs = self._parse_output(logfile)
         else:
             current_files, dirs = None, None
 
-        self._root.return_code = return_code
+        # update root objects from mothur output, then return updated object
         self._root.current_files = current_files
         self._root.current_dirs = dirs
-
         return self._root
-
 
     @staticmethod
     def _parse_output(output):
