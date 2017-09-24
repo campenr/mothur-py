@@ -11,7 +11,7 @@ class Mothur:
     """
 
     def __init__(self, name='mothur', current_files=None, current_dirs=None, parse_current_file=False,
-                 parse_log_file=False, display_output=False, verbosity=0):
+                 parse_log_file=False, verbosity=0):
         """
 
         :param name: name of the mothur object
@@ -33,8 +33,6 @@ class Mothur:
 
         self.parse_current_file = parse_current_file
         self.parse_log_file = parse_log_file
-        self.display_output = display_output
-
         self.verbosity = verbosity
 
     def __getattr__(self, name):
@@ -160,7 +158,7 @@ class MothurFunction:
                     if 0 <= self._root.verbosity < 3:
 
                         # only print output if verbosity not zero
-                        if 1 <= self._root.verbosity < 3:
+                        if self._root.verbosity > 0:
                             # strip newline characters as print statement will insert its own
                             line = line.replace(b'\r', b'')
                             line = line.rsplit(b'\n')[0]
@@ -184,7 +182,10 @@ class MothurFunction:
                     else:
                         raise(ValueError('verbosity must be 0, 1, or 2.'))
 
-            p.wait()  # wait for the subprocess to finish
+            return_code = p.wait()  # wait for the subprocess to finish
+            if return_code != 0:
+                raise(MothurError(''))
+
 
         except KeyboardInterrupt:
             # tidy up running process before raising exception when keyboard interrupt detected
@@ -290,3 +291,9 @@ class MothurFunction:
                 print(line.strip())
 
         return
+
+
+class MothurError(Exception):
+
+    def __init__(self, *args, **kwargs):
+        pass
