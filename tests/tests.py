@@ -15,6 +15,8 @@ class Test(unittest.TestCase):
     def test_singlular_func(self):
         """Test running a funciton from mothur that has only one word."""
 
+        self.mothur.suppress_logfile = True
+        self.mothur.verbosity = 2
         self.mothur.help()
 
         pass

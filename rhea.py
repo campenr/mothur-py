@@ -1,8 +1,6 @@
-from subprocess import call, PIPE, Popen, STDOUT
+from subprocess import PIPE, Popen, STDOUT
 import random
-import json
-from pprint import pprint
-
+import os
 
 class Mothur:
     """
@@ -11,7 +9,7 @@ class Mothur:
     """
 
     def __init__(self, name='mothur', current_files=None, current_dirs=None, parse_current_file=False,
-                 parse_log_file=False, verbosity=0):
+                 parse_log_file=False, verbosity=0, suppress_logfile=False):
         """
 
         :param name: name of the mothur object
@@ -24,6 +22,8 @@ class Mothur:
         :type parse_log_file: bool
         :param display_logfile: whether to print the contents of the mothur logfile
         :type display_logfile: bool   
+        :param supress_logfile: whether to supress the creation of mothur logfiles
+        :type supress_logfile: bool
 
         """
         self._name = name
@@ -34,6 +34,8 @@ class Mothur:
         self.parse_current_file = parse_current_file
         self.parse_log_file = parse_log_file
         self.verbosity = verbosity
+
+        self.suppress_logfile = suppress_logfile
 
     def __getattr__(self, name):
         """Catches unknown method calls to run them as mothur functions instead."""
@@ -128,10 +130,16 @@ class MothurFunction:
             commands.insert(0, 'set.dir(%s)' % current_dirs)
         commands.append('get.current()')
 
-        # TODO: check that logfile name does not already exist
-        random.seed()
-        rn = random.randint(10000, 99999)
-        logfile = 'mothur.rhea.%d.logfile' % rn
+        if self._root.suppress_logfile is True:
+            logfile = os.devnull
+        elif self._root.suppress_logfile is False:
+            # TODO: check that logfile name does not already exist
+            random.seed()
+            rn = random.randint(10000, 99999)
+            logfile = 'mothur.rhea.%d.logfile' % rn
+
+        print('logfile: ', logfile)
+
         commands.insert(0, 'set.logfile(name=%s)' % logfile)
 
         # format commands for mothur execution
