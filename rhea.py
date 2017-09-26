@@ -8,7 +8,7 @@ class Mothur:
 
     """
 
-    def __init__(self, name='mothur', current_files=None, current_dirs=None, parse_current_file=False,
+    def __init__(self, name='mothur', current_files=dict(), current_dirs=dict(), parse_current_file=False,
                  parse_log_file=False, verbosity=0, suppress_logfile=False):
         """
 
@@ -122,24 +122,30 @@ class MothurFunction:
         commands = list()
         base_command = '{0}({1})'.format(mothur_command, mothur_args)
         commands.append(base_command)
-        if self._root.current_files is not None:
+        if self._root.current_files:
             current_files = ', '.join(['%s=%s' % (k, v) for k, v in self._root.current_files.items()])
             commands.insert(0, 'set.current(%s)' % current_files)
-        if self._root.current_dirs is not None:
+        if self._root.current_dirs:
             current_dirs = ', '.join(['%s=%s' % (k, v) for k, v in self._root.current_dirs.items()])
             commands.insert(0, 'set.dir(%s)' % current_dirs)
         commands.append('get.current()')
 
-        if self._root.suppress_logfile is True:
-            logfile = os.devnull
-        elif self._root.suppress_logfile is False:
-            # TODO: check that logfile name does not already exist
+        if self._root.suppress_logfile:
+            # force name of mothur logfile
+            logfile = 'mothur.rhea.logfile'
+        else:
             random.seed()
-            rn = random.randint(10000, 99999)
-            logfile = 'mothur.rhea.%d.logfile' % rn
+            while True:
+                # iterate random names, checking it does not exists already
+                rn = random.randint(10000, 99999)
+                logfile_path = 'mothur.rhea.%d.logfile' % rn
 
-        print('logfile: ', logfile)
-
+                out_dir = self._root.current_dirs.get('output', False)
+                if out_dir:
+                    logfile_path = os.path.join(out_dir, logfile_path)
+                if not os.path.isfile(logfile_path):
+                    logfile = logfile_path
+                    break
         commands.insert(0, 'set.logfile(name=%s)' % logfile)
 
         # format commands for mothur execution
@@ -194,21 +200,29 @@ class MothurFunction:
             if return_code != 0:
                 raise(MothurError('Mothur encounted an error.'))
 
+            # TODO parse output files from stdout instead
+            if self._root.parse_log_file:
+                # update root objects from mothur output, then return updated object
+                current_files, dirs = self._parse_output(logfile)
+                self._root.current_files = current_files
+                self._root.current_dirs = dirs
 
         except KeyboardInterrupt:
             # tidy up running process before raising exception when keyboard interrupt detected
             p.terminate()
             raise(KeyboardInterrupt('User terminated process.'))
 
-        # TODO parse output files from stdout
-        if self._root.parse_log_file:
-            current_files, dirs = self._parse_output(logfile)
-        else:
-            current_files, dirs = None, None
+        finally:
+            # conditionally cleanup logfile
+            if self._root.suppress_logfile is True:
+                # need to append output directory to logfile path if it has been set else
+                out_dir = self._root.current_dirs.get('output', False)
+                if out_dir:
+                    logfile = os.path.join(out_dir, logfile)
 
-        # update root objects from mothur output, then return updated object
-        self._root.current_files = current_files
-        self._root.current_dirs = dirs
+                # will raise an error if a KeyboardInterrupt is placed. Need to deal with this better.
+                os.remove(logfile)
+
         return self._root
 
     @staticmethod
