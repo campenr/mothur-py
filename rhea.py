@@ -1,7 +1,5 @@
-from subprocess import call, PIPE, Popen, STDOUT
+from subprocess import PIPE, Popen, STDOUT
 import random
-import json
-from pprint import pprint
 
 
 class Mothur:
@@ -10,23 +8,20 @@ class Mothur:
 
     """
 
-    def __init__(self, name='mothur', current_files=None, current_dirs=None, parse_current_file=False,
+    def __init__(self, current_files=None, current_dirs=None, parse_current_file=False,
                  parse_log_file=False, verbosity=0):
         """
 
-        :param name: name of the mothur object
-        :type name: str
         :param current_files: dictionary type object containing current files for mothur
         :type current_files: dict
         :param parse_current_file: whether to parse the current files from the current.files file output by mothur
         :type parse_current_file: bool
         :param parse_log_file: whether to parse the current files from the log file output by mothur
         :type parse_log_file: bool
-        :param display_logfile: whether to print the contents of the mothur logfile
-        :type display_logfile: bool   
+        :param verbosity: how verbose the output should be. Can be 0, 1, or 2 where 0 is silent and 2 is most verbose.
+        :type verbosity: int
 
         """
-        self._name = name
 
         self.current_files = current_files
         self.current_dirs = current_dirs
@@ -35,16 +30,20 @@ class Mothur:
         self.parse_log_file = parse_log_file
         self.verbosity = verbosity
 
-    def __getattr__(self, name):
+    def __getattr__(self, command_name):
         """Catches unknown method calls to run them as mothur functions instead."""
 
-        if not name.startswith('_'):
-            return MothurFunction(self, self, name)
+        if not command_name.startswith('_'):
+            return MothurFunction(root=self, command_name=command_name)
 
-        raise (AttributeError('{} is not a valid mothur function.'.format(name)))
+        raise (AttributeError('%s is not a valid mothur function.' % command_name))
 
     def __repr__(self):
-        return '%s' % vars(self)
+        return 'Mothur(current_files=%r, current_dirs=%r, parse_current_file=%r, parse_log_file=%r, verbosity=%r)' % \
+               (self.current_files, self.current_dirs, self.parse_current_file, self.parse_log_file, self.verbosity)
+
+    def __str__(self):
+        return 'rhea.Mothur'
 
 
 class MothurFunction:
@@ -56,39 +55,40 @@ class MothurFunction:
 
     """
 
-    def __init__(self, root, parent, name):
+    def __init__(self, root, command_name):
         """
-        Instantiates a MothurFunction instance.
 
         :param root: the object at the root of the mothur and mothurFunction tree
         :type root: rhea.core.Mothur
-        :param parent: the object that created this class instance
-        :type parent: rhea.core.Mothur or rhea.core.MothurFunction
-        :param name: the name of this class instance       
-        :type name: str
+        :param command_name: the name of this class instance
+        :type command_name: str
 
         """
 
         self._root = root
-        self._parent = parent
-        self._name = parent._name + '.' + name
+        self._command_name = command_name
 
-    def __getattr__(self, name):
+    def __getattr__(self, command_name):
         """
-        Creates a child MothurFunction object.
 
-        :param name: the name of the attribute being requested by the calling function/class
-        :type name: str
+        :param command_name: the name of the attribute being requested by the calling function/class
+        :type command_name: str
 
         :return: a new MothurFunction instance with self.parent set to this MothurFunction instance.
         :returns: rhea.core.MothurFunction
 
         """
 
-        if not name.startswith('_'):
-            return MothurFunction(self._root, self, name)
+        if not command_name.startswith('_'):
+            return MothurFunction(self._root, '%s.%s' % (self._command_name, command_name))
 
-        raise (AttributeError('{} is not a valid mothur function.'.format(name)))
+        raise (AttributeError('{} is not a valid mothur function.'.format(command_name)))
+
+    def __repr__(self):
+        return 'MothurFunction(root=%r, name=%r)' % (self._root, self._command_name)
+
+    def __str__(self):
+        return '%s.%s' % (self._root, self._command_name)
 
     def __call__(self, *args, **kwargs):
         """
@@ -97,7 +97,7 @@ class MothurFunction:
         """
 
         # extract name of mothur command
-        mothur_command = self._name.split('.', 1)[1]
+        mothur_command = self._command_name
 
         # get and format arguments for mothur command call
         formatted_args = ''
@@ -186,7 +186,6 @@ class MothurFunction:
             if return_code != 0:
                 raise(MothurError('Mothur encounted an error.'))
 
-
         except KeyboardInterrupt:
             # tidy up running process before raising exception when keyboard interrupt detected
             p.terminate()
@@ -242,55 +241,6 @@ class MothurFunction:
                         dirs[v] = mothur_dir
 
         return current_files, dirs
-
-    @staticmethod
-    def _display_output(command, logfile):
-        """
-        Prints contents of logfile.
-
-        :param commands: mothur commands
-        :type commands: list
-        :param logfile: path of the output logfile generated by mothur
-        :param logfile: str
-
-        """
-
-        # match = 'mothur > {}'.format(command)
-        match = command
-        # print('match: ', match)
-        # print('logfile: ', logfile)
-
-        with open(logfile, 'r') as log:
-            lines = log.readlines()
-
-            # for line in lines:
-            #     print('-----')
-            #     print('line: ', line)
-            #     print('match: ', match)
-            #     print(match in line)
-
-
-            # print(lines)
-            #
-            # find first instance of set.current in the logfile
-            start_idx = next(idx for idx, line in enumerate(lines) if match in line)
-
-            # find length of file
-            # TODO: do this more efficiently
-            file_len = len(lines[start_idx:])
-
-            # TODO uncomment this when adding saving current
-            # find last instance of get.current in the logfile
-            # TODO: do this more efficiently
-            last_idx = next(idx for idx, line in enumerate(lines[:start_idx:-1]) if 'get.current' in line)
-            output_end = (file_len - last_idx) - 1
-
-            for idx, line in enumerate(lines[start_idx:]):
-                if idx > 1000 or idx >= output_end:
-                    break
-                print(line.strip())
-
-        return
 
 
 class MothurError(Exception):
