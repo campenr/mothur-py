@@ -5,11 +5,11 @@ import os
 
 class Mothur:
     """
-    Main class that contains configuration for mothur execution and catches mothur function calls.
+    Main class that contains configuration for mothur execution.
 
     """
 
-    def __init__(self, current_files=dict(), current_dirs=dict(), verbosity=0, suppress_logfile=False):
+    def __init__(self, current_files=None, current_dirs=None, verbosity=0, suppress_logfile=False):
         """
 
         :param current_files: dictionary type object containing current files for mothur
@@ -150,10 +150,10 @@ class MothurFunction:
         mothur_error_flag = False
 
         # setup byte encoded strings for conditional printing
-        base_command_bytes = base_command#.encode()
-        get_current_bytes = 'mothur > get.current()'#.encode()
-        mothur_warning_bytes = '<<<'#.encode()
-        mothur_error_bytes = '***'#.encode()
+        base_command_bytes = base_command
+        get_current_bytes = 'mothur > get.current()'
+        mothur_warning_bytes = '<<<'
+        mothur_error_bytes = '***'
 
         # parsing flags
         parse_current_flag = False
@@ -165,8 +165,7 @@ class MothurFunction:
             'Current default directory saved by mothur:': 'tempdefault'
         }
         current_dir_bytes_keys = current_dir_bytes.keys()
-        current_files_bytes = 'Current files saved by mothur:'#.encode()
-        current_files_list = []
+        current_files_bytes = 'Current files saved by mothur:'
 
         # run mothur command in command line mode
         p = Popen(['mothur', '#%s' % commands_str], stdout=PIPE, stderr=STDOUT)
@@ -219,9 +218,6 @@ class MothurFunction:
                         # save current files while parse flag is true
                         if parse_current_flag:
                             current_file = line.split('=')
-
-                            print('[====Current File=====]: ', current_file)
-
                             current_file_type = current_file[0]
                             current_file_name = current_file[1]
                             self._root.current_files[current_file_type] = current_file_name
@@ -255,7 +251,7 @@ class MothurFunction:
                 if out_dir:
                     logfile = os.path.join(out_dir, logfile)
 
-                # TODO: Mothur only renames the logfile to something predictable if exits properly, otherwise this will fail
+                # TODO: Mothur only renames the logfile to something predictable if exits properly, else this will fail
                 try:
                     os.remove(logfile)
                 except FileNotFoundError:
