@@ -9,16 +9,11 @@ class Mothur:
 
     """
 
-    def __init__(self, current_files=dict(), current_dirs=dict(), parse_current_file=False,
-                 parse_log_file=False, verbosity=0, suppress_logfile=False):
+    def __init__(self, current_files=dict(), current_dirs=dict(), verbosity=0, suppress_logfile=False):
         """
 
         :param current_files: dictionary type object containing current files for mothur
         :type current_files: dict
-        :param parse_current_file: whether to parse the current files from the current.files file output by mothur
-        :type parse_current_file: bool
-        :param parse_log_file: whether to parse the current files from the log file output by mothur
-        :type parse_log_file: bool
         :param verbosity: how verbose the output should be. Can be 0, 1, or 2 where 0 is silent and 2 is most verbose.
         :type verbosity: int
         :param suppress_logfile: whether to supress the creation of mothur logfiles
@@ -28,9 +23,6 @@ class Mothur:
 
         self.current_files = current_files
         self.current_dirs = current_dirs
-
-        self.parse_current_file = parse_current_file
-        self.parse_log_file = parse_log_file
         self.verbosity = verbosity
         self.suppress_logfile = suppress_logfile
 
@@ -89,7 +81,7 @@ class MothurFunction:
         raise (AttributeError('{} is not a valid mothur function.'.format(command_name)))
 
     def __repr__(self):
-        return 'MothurFunction(root=%r, name=%r)' % (self._root, self._command_name)
+        return 'MothurFunction(root=<%s object>, name=%r)' % (self._root, self._command_name)
 
     def __str__(self):
         return '%s.%s' % (self._root, self._command_name)
@@ -163,6 +155,19 @@ class MothurFunction:
         mothur_warning_bytes = '<<<'.encode()
         mothur_error_bytes = '***'.encode()
 
+        # parsing flags
+        parse_current_flag = False
+
+        # setup byte encoded strings for conditional output parsing
+        current_dir_bytes = {
+            'Current input directory saved by mothur:'.encode(): 'input',
+            'Current output directory saved by mothur:'.encode(): 'output',
+            'Current default directory saved by mothur:'.encode(): 'tempdefault'
+        }
+        current_dir_bytes_keys = current_dir_bytes.keys()
+        current_files_bytes = 'Current files saved by mothur:'.encode()
+        current_files_list = []
+
         # run mothur command in command line mode
         p = Popen(['mothur', '#%s' % commands_str], stdout=PIPE, stderr=STDOUT)
 
@@ -195,6 +200,26 @@ class MothurFunction:
                         elif self._root.verbosity == 2:
                             print(line.decode())
 
+                        # check for current dirs
+                        for key in current_dir_bytes_keys:
+                            if key in line:
+                                current_dir = line.decode().split(' ')[-1].split('\n')[0]
+                                self._root.current_dirs[current_dir_bytes[key]] = current_dir
+
+                        # save current files while parse flag is true
+                        if parse_current_flag:
+                            if line == b'\n':
+                                parse_current_flag = False
+                            else:
+                                current_file = line.decode().split('=')
+                                current_file_type = current_file[0]
+                                current_file_name = current_file[1]
+                                self._root.current_files[current_file_type] = current_file_name
+
+                        # check for current files
+                        if current_files_bytes in line:
+                            parse_current_flag = True
+
                     else:
                         raise(ValueError('verbosity must be 0, 1, or 2.'))
 
@@ -202,19 +227,14 @@ class MothurFunction:
             if return_code != 0:
                 raise(MothurError('Mothur encounted an error.'))
 
-            # TODO parse output files from stdout instead
-            if self._root.parse_log_file:
-                # update root objects from mothur output, then return updated object
-                current_files, dirs = self._parse_output(logfile)
-                self._root.current_files = current_files
-                self._root.current_dirs = dirs
+            # # TODO parse output files from stdout instead
+            # if self._root.parse_log_file:
+            #
+            #     # update root objects from mothur output, then return updated object
+            #     current_files, dirs = self._parse_output(logfile)
+            #     self._root.current_files = current_files
+            #     self._root.current_dirs = dirs
 
-        except KeyboardInterrupt:
-            # tidy up running process before raising exception when keyboard interrupt detected
-            p.terminate()
-            raise(KeyboardInterrupt('User terminated process.'))
-
-        finally:
             # conditionally cleanup logfile
             if self._root.suppress_logfile is True:
                 # need to append output directory to logfile path if it has been set else
@@ -225,47 +245,52 @@ class MothurFunction:
                 # will raise an error if a KeyboardInterrupt is placed. Need to deal with this better.
                 os.remove(logfile)
 
-        return self._root
+            return self._root
 
-    @staticmethod
-    def _parse_output(output):
-        """
-        Parses mothur logfile to extract current files.
-
-        :param output: file name of logfile containing mothur output
-        :type output: str
-
-        """
-
-        HEADERS = {
-            'Current input directory saved by mothur:': 'input',
-            'Current output directory saved by mothur:': 'output',
-            'Current default directory saved by mothur:': 'tempdefault'
-        }
-
-        current_files = {}
-        dirs = {}
-        with open(output, 'r') as log:
-            lines = (line for line in log.readlines())
-            for line in lines:
-                if 'Current files saved by mothur:' in line:
-                    while True:
-                        try:
-                            output_file = (next(line for line in lines)).split()
-                            if output_file:
-                                file_type = output_file[0].split('=')[0]
-                                file_name = output_file[0].split('=')[1]
-                                current_files[file_type] = file_name
-                            else:
-                                break
-                        except StopIteration:
-                            break
-                for k, v in HEADERS.items():
-                    if k in line:
-                        mothur_dir = line.split(' ')[-1].split('\n')[0]
-                        dirs[v] = mothur_dir
-
-        return current_files, dirs
+        except KeyboardInterrupt:
+            # tidy up running process before raising exception when keyboard interrupt detected
+            p.terminate()
+            raise(KeyboardInterrupt('User terminated process.'))
+    #
+    # @staticmethod
+    # def _parse_output(output):
+    #     """
+    #     Parses mothur logfile to extract current files.
+    #
+    #     :param output: file name of logfile containing mothur output
+    #     :type output: str
+    #
+    #     """
+    #
+    #     HEADERS = {
+    #         'Current input directory saved by mothur:': 'input',
+    #         'Current output directory saved by mothur:': 'output',
+    #         'Current default directory saved by mothur:': 'tempdefault'
+    #     }
+    #
+    #     current_files = {}
+    #     dirs = {}
+    #     with open(output, 'r') as log:
+    #         lines = (line for line in log.readlines())
+    #         for line in lines:
+    #             if 'Current files saved by mothur:' in line:
+    #                 while True:
+    #                     try:
+    #                         output_file = (next(line for line in lines)).split()
+    #                         if output_file:
+    #                             file_type = output_file[0].split('=')[0]
+    #                             file_name = output_file[0].split('=')[1]
+    #                             current_files[file_type] = file_name
+    #                         else:
+    #                             break
+    #                     except StopIteration:
+    #                         break
+    #             for k, v in HEADERS.items():
+    #                 if k in line:
+    #                     mothur_dir = line.split(' ')[-1].split('\n')[0]
+    #                     dirs[v] = mothur_dir
+    #
+    #     return current_files, dirs
 
 
 class MothurError(Exception):
