@@ -1,0 +1,1 @@
+include *.txt *.md tests/test_data/test_fasta_1.fasta examples/Mothur_MiSeq_SOP/Mothur_MiSeq_SOP.ipynb examples/basic_usage/basic_usage.files examples/basic_usage/Basic_Usage.ipynb examples/basic_usage/basic_usage_R1.fastq examples/basic_usage/basic_usage_R2.fastq
