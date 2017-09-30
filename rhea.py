@@ -158,6 +158,7 @@ class MothurCommand:
 
         # combine commands for mothur execution
         commands_str = '; '.join(commands)
+        base_command_query = 'mothur > %s' % base_command
 
         # --------------- run mothur --------------- #
 
@@ -186,13 +187,13 @@ class MothurCommand:
 
                             # conditionally set flags
                             # user input spans output from the base command until the get.current() command
-                            if base_command in line:
+                            if base_command_query in line:
                                 user_input_flag = True
                             elif 'mothur > get.current()' in line:
                                 user_input_flag = False
 
                             # mothur prints warning messages starting with a string containing '<<<'
-                            if '<<<' in line:
+                            if '<^>' in line:
                                 mothur_warning_flag = True
 
                             # mothur prints error messages starting with a string containing '***'
@@ -204,6 +205,13 @@ class MothurCommand:
                             if any([user_input_flag, mothur_warning_flag, mothur_error_flag]):
                                 print(line)
                         elif self.root_object.verbosity == 2:
+                            # # list all flags for debug reasons
+                            # print(
+                            #     ' user_input_flag: ', user_input_flag,
+                            #     ' mothur_warning_flag: ', mothur_warning_flag,
+                            #     ' mothur_error_flag: ',  mothur_error_flag,
+                            #     ' parse_current_flag: ', parse_current_flag
+                            # )
                             print(line)
 
                         # check for current dirs
