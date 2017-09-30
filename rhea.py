@@ -9,7 +9,7 @@ class Mothur:
 
     """
 
-    def __init__(self, current_files=None, current_dirs=None, verbosity=0, suppress_logfile=False):
+    def __init__(self, current_files=dict(), current_dirs=dict(), verbosity=0, suppress_logfile=False):
         """
 
         :param current_files: dictionary type object containing current files for mothur
@@ -30,19 +30,12 @@ class Mothur:
         """Catches unknown method calls to run them as mothur functions instead."""
 
         if not command_name.startswith('_'):
-            return MothurFunction(root=self, command_name=command_name)
+            return MothurCommand(root=self, command_name=command_name)
 
         raise (AttributeError('%s is not a valid mothur function.' % command_name))
 
-    def __repr__(self):
-        return 'Mothur(current_files=%r, current_dirs=%r, parse_current_file=%r, parse_log_file=%r, verbosity=%r)' % \
-               (self.current_files, self.current_dirs, self.parse_current_file, self.parse_log_file, self.verbosity)
 
-    def __str__(self):
-        return 'rhea.Mothur'
-
-
-class MothurFunction:
+class MothurCommand:
     """
     Callable handler for mothur function calls generated from unknown method calls for `mothur`.
 
@@ -54,10 +47,13 @@ class MothurFunction:
     def __init__(self, root, command_name):
         """
 
-        :param root: the object at the root of the mothur and mothurFunction tree
-        :type root: rhea.core.Mothur
+        :param root: the object at the root of the MothurCommand tree
+        :type root: rhea.Mothur
         :param command_name: the name of this class instance
         :type command_name: str
+
+        ..note: MothurCommand attributes are preceded with an underscore to prevent accidental collision with actual
+            mothur commands.
 
         """
 
@@ -70,18 +66,17 @@ class MothurFunction:
         :param command_name: the name of the attribute being requested by the calling function/class
         :type command_name: str
 
-        :return: a new MothurFunction instance with self.parent set to this MothurFunction instance.
-        :returns: rhea.core.MothurFunction
+        :return: a new MothurCommand instance with self.parent set to this MothurCommand instance.
+        :returns: rhea.core.MothurCommand
+
+        ..warning: if the command_name is not a valid mothur command mothur will error.
 
         """
 
-        if not command_name.startswith('_'):
-            return MothurFunction(self._root, '%s.%s' % (self._command_name, command_name))
-
-        raise (AttributeError('{} is not a valid mothur function.'.format(command_name)))
+        return MothurCommand(self._root, '%s.%s' % (self._command_name, command_name))
 
     def __repr__(self):
-        return 'MothurFunction(root=<%s object>, name=%r)' % (self._root, self._command_name)
+        return 'MothurCommand(root=<%s object>, name=%r)' % (self._root, self._command_name)
 
     def __str__(self):
         return '%s.%s' % (self._root, self._command_name)
@@ -233,8 +228,6 @@ class MothurFunction:
             if return_code != 0:
                 raise(MothurError('Mothur encounted an error.'))
 
-            return self._root
-
         except KeyboardInterrupt:
             # tidy up running process before raising exception when keyboard interrupt detected
             p.terminate()
@@ -256,6 +249,8 @@ class MothurFunction:
                     os.remove(logfile)
                 except FileNotFoundError:
                     print('[WARNING]: could not delete mothur logfile')
+
+            return self._root
 
 
 class MothurError(Exception):
