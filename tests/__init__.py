@@ -36,7 +36,7 @@ class Test(unittest.TestCase):
 
     def tearDown(self):
 
-        rmtree(self.test_output_dir, )
+        rmtree(self.test_output_dir)
 
 
 if __name__ == '__main__':
