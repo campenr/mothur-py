@@ -202,42 +202,42 @@ class MothurCommand:
                             if '***' in line:
                                 mothur_error_flag = True
 
-                        # conditionally print output based on flags
-                        if self.root_object.verbosity == 1:
-                            if any([user_input_flag, mothur_warning_flag, mothur_error_flag]):
+                            # conditionally print output based on flags
+                            if self.root_object.verbosity == 1:
+                                if any([user_input_flag, mothur_warning_flag, mothur_error_flag]):
+                                    print(line)
+                            elif self.root_object.verbosity == 2:
+                                # # list all flags for debug reasons
+                                # print(
+                                #     ' user_input_flag: ', user_input_flag,
+                                #     ' mothur_warning_flag: ', mothur_warning_flag,
+                                #     ' mothur_error_flag: ',  mothur_error_flag,
+                                #     ' parse_current_flag: ', parse_current_flag
+                                # )
                                 print(line)
-                        elif self.root_object.verbosity == 2:
-                            # # list all flags for debug reasons
-                            # print(
-                            #     ' user_input_flag: ', user_input_flag,
-                            #     ' mothur_warning_flag: ', mothur_warning_flag,
-                            #     ' mothur_error_flag: ',  mothur_error_flag,
-                            #     ' parse_current_flag: ', parse_current_flag
-                            # )
-                            print(line)
 
-                        # check for current dirs
-                        for key in current_dir_keys:
-                            if key in line:
-                                current_dir = line.split(' ')[-1].split('\n')[0]
-                                self.root_object.current_dirs[current_dir_headers[key]] = current_dir
+                            # check for current dirs
+                            for key in current_dir_keys:
+                                if key in line:
+                                    current_dir = line.split(' ')[-1].split('\n')[0]
+                                    self.root_object.current_dirs[current_dir_headers[key]] = current_dir
 
-                        # conditionally reset flag for parsing current files from stdout
-                        # mothur prints a blank line after the list of current files
-                        if line == '':
-                            parse_current_flag = False
+                            # conditionally reset flag for parsing current files from stdout
+                            # mothur prints a blank line after the list of current files
+                            if line == '':
+                                parse_current_flag = False
 
-                        # conditionally parse current files from stdout
-                        if parse_current_flag:
-                            current_file = line.split('=')
-                            current_file_type = current_file[0]
-                            current_file_name = current_file[1]
-                            self.root_object.current_files[current_file_type] = current_file_name
+                            # conditionally parse current files from stdout
+                            if parse_current_flag:
+                                current_file = line.split('=')
+                                current_file_type = current_file[0]
+                                current_file_name = current_file[1]
+                                self.root_object.current_files[current_file_type] = current_file_name
 
-                        # check for current files
-                        # mothur prints out the current files after the line containing 'Current files saved by mothur:'
-                        if 'Current files saved by mothur:' in line:
-                            parse_current_flag = True
+                            # check for current files
+                            # mothur prints out the current files after the line containing 'Current files saved by mothur:'
+                            if 'Current files saved by mothur:' in line:
+                                parse_current_flag = True
 
             # wait for the subprocess to finish then check for erroneous output or return code
             return_code = p.wait()
