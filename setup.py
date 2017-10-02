@@ -16,7 +16,7 @@ setup(
     version="0.2.0",
     description="Python wrapper for the bioinformatics tool mothur",
     long_description=long_description,
-    url="https://github.com/campenr/mothur-py",
+    url="https://github.com/campenr/mothur_py",
     author="Richard Campen",
     author_email="richard@campen.co",
     license="Modified BSD License",
