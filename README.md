@@ -1,4 +1,4 @@
-# Rhea
+# mothur_py
 
 Copyright (c) 2017, Richard Campen All rights reserved.
 
@@ -11,7 +11,7 @@ See LICENSE.txt for full license conditions.
 A python wrapper for the command line version of the bioinformatics tool 
 [mothur](https://www.mothur.org/).
 
-Rhea was inspired by the [ipython-mothurmagic](https://github.com/SchlossLab/ipython-mothurmagic) module, but with an 
+Mothur-py was inspired by the [ipython-mothurmagic](https://github.com/SchlossLab/ipython-mothurmagic) module, but with an 
 intention to provide a more general python wrapper that would work outside of the IPython/Jupyter notebook environment, 
 as well as provide support for mothur's `current` keyword functionality.
 
@@ -27,7 +27,7 @@ Use of this module revolves around the `Mothur` class that catches method calls 
 as commands. An instance of the `Mothur` class needs to be created before running any commands:
 
     # create instance of Mothur class
-    from rhea import Mothur
+    from mothur_py import Mothur
     m = Mothur()
     
 Commands in mothur can then be executed as methods of the `Mothur` class instance using the same names you would use 

@@ -1,4 +1,4 @@
-"""Setup.py for Rhea."""
+"""setup.py for mothur_py."""
 
 from setuptools import setup, find_packages
 
@@ -12,11 +12,11 @@ except(IOError, ImportError):
     print('using README.md for long description')
 
 setup(
-    name="Rhea",
-    version="0.1.1",
+    name="mothur_py",
+    version="0.2.0",
     description="Python wrapper for the bioinformatics tool mothur",
     long_description=long_description,
-    url="https://github.com/campenr/rhea",
+    url="https://github.com/campenr/mothur-py",
     author="Richard Campen",
     author_email="richard@campen.co",
     license="Modified BSD License",

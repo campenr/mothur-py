@@ -7,7 +7,7 @@ For full license terms see LICENSE.txt
 
 """
 
-# Rhea v0.1.1
+# mothur-py v0.2.0
 
 from subprocess import PIPE, Popen, STDOUT
 import random
@@ -59,7 +59,7 @@ class MothurCommand:
         """
 
         :param root: the object at the root of the MothurCommand tree
-        :type root: rhea.Mothur
+        :type root: core.Mothur
         :param command_name: the name of this class instance
         :type command_name: str
 
@@ -142,13 +142,13 @@ class MothurCommand:
         # create logfile name
         if self.root_object.suppress_logfile:
             # force name of mothur logfile
-            logfile = 'mothur.rhea.logfile'
+            logfile = 'mothur.py.logfile'
         else:
             random.seed()
             while True:
                 # iterate random names, checking it does not exists already
                 rn = random.randint(10000, 99999)
-                logfile_path = 'mothur.rhea.%d.logfile' % rn
+                logfile_path = 'mothur.py.%d.logfile' % rn
 
                 out_dir = self.root_object.current_dirs.get('output', False)
                 if out_dir:

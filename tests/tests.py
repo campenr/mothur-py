@@ -1,7 +1,7 @@
 import unittest
 import os
 from shutil import rmtree
-from rhea import Mothur
+from core import Mothur
 
 
 class Test(unittest.TestCase):
