@@ -1,7 +1,5 @@
 # Rhea
 
-v0.1.0
-
 Copyright (c) 2017, Richard Campen All rights reserved.
 
 See LICENSE.txt for full license conditions.
