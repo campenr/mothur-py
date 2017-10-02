@@ -7,7 +7,7 @@ For full license terms see LICENSE.txt
 
 """
 
-# Rhea v0.1.0
+# Rhea v0.1.1
 
 from subprocess import PIPE, Popen, STDOUT
 import random

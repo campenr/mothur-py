@@ -13,7 +13,7 @@ except(IOError, ImportError):
 
 setup(
     name="Rhea",
-    version="0.1.0",
+    version="0.1.1",
     description="Python wrapper for the bioinformatics tool mothur",
     long_description=long_description,
     url="https://github.com/campenr/rhea",
