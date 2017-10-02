@@ -1,7 +1,8 @@
-import unittest
 import os
+import unittest
 from shutil import rmtree
-from core import Mothur
+
+from mothur_py.core import Mothur
 
 
 class Test(unittest.TestCase):
