@@ -1,6 +1,6 @@
 # mothur_py
 
-Copyright (c) 2017, Richard Campen All rights reserved.
+Copyright &#169; 2017, Richard Campen. All rights reserved.
 
 See LICENSE.txt for full license conditions.
 
@@ -18,6 +18,8 @@ as well as provide support for mothur's `current` keyword functionality.
 **Note:** This module has only been tested with mothur v1.39.5 and python 3.6 on Windows 10 (64-bit). It should in 
 theory work with other versions of mothur, but the older the version the less likely as this module relies upon some of 
 the more recent mothur commands/output to function properly.
+
+---
 
 ### Basic Usage
 
@@ -39,15 +41,15 @@ within the command line version of mothur:
 Unlike the command line version, command parameters must be passed as strings, integers, or floats:
 
     # running make contigs using str input for file parameter, and int for processor paramenter
-    m.make.contigs(file='stability.files', processors=2)
+    m.make.contigs(file='basic_usage.files', processors=2)
     
 Failing to do so will generally result in python raising a `NameError`:
 
     # running make contigs in an interpreter session without passing file parameter as a string
-    >>> m.make.contigs(file=stability.files)
+    >>> m.make.contigs(file=basic_usage.files)
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-    NameError: name 'stability' is not defined
+    NameError: name 'basic_usage' is not defined
 
 There is also full implementation of the `current` keyword used in the command line version of mothur:    
        
@@ -70,16 +72,16 @@ itself.
 ### Advanced Usage
 
 The current files and current directories for use in mothur are stored in dictionary attributes of the `Mothur` 
-instance, `current_files` and `current_dirs` respectivley. These values can be passed to mothur commands, e.g:
+instance, `current_files` and `current_dirs` respectively. These values can be passed to mothur commands, e.g:
 
     # passing current fasta file to summary.seqs()
     m.summary.seqs(fasta=m.current_files['fasta'])
        
 The `current` keyword is actually just a shortcut for this functionality so it will always be easier to just pass 
-`'current'`. However, this demonstrates that the paramters of the mothur commands can accept any variable as long as it 
-will resolve to something that mothur accepts, in the above example the dictionary value it resolves to a string that is
-the path to a `.fasta` file. As a better example, you could perform classification of sequences at multiple defined 
-cutoffs as follows:
+`'current'`. However, this demonstrates that the parameters of the mothur commands can accept any variable as long as it 
+will resolve to something that mothur accepts. In the above example, the dictionary value resolves to a string that is
+the path to the `.fasta` file. As a better example of passing python variables as mothur command parameters, you could 
+perform classification of sequences at multiple defined cutoffs as follows:
 
     # iterate over list off possible cutoff values
     for cutoff in [70, 80, 90]:   
@@ -92,11 +94,11 @@ This may be a convoluted example, but it demonstrates the functionality well. On
 that depending on the mothur command and the parameter you are changing, you may be overwriting your output files as you 
 go. This is the reason for saving each output to a different folder in the above example.
 
-You can instantiate a `Mothur` instance with predefined current file and directory dictionaries:
+You can also instantiate a `Mothur` instance with predefined current file and directory dictionaries:
 
     m = Mothur(current_files=my_predefined_files_dict, current_dirs=my_predefined_files_dict)
 
-You can also modify the contents of these dictionaries in between mothur commands. For example in the previous example 
+You can modify the contents of these dictionaries in between mothur commands. In the previous example 
 where we classified at different cutoffs, we could have instead controlled the input and output directories as such:
 
     for cutoff in [70, 80, 90]:   
