@@ -241,6 +241,8 @@ class MothurCommand:
 
             # wait for the subprocess to finish then check for erroneous output or return code
             return_code = p.wait()
+
+            # TODO do we need to check both conditions
             if return_code != 0 or mothur_error_flag:
                 raise(RuntimeError('Mothur encounted an error with return_code=%s and mothur_error_flag=%s' %
                                    (return_code, mothur_error_flag)))
@@ -266,4 +268,4 @@ class MothurCommand:
                 except FileNotFoundError:
                     print('[WARNING]: could not delete mothur logfile')
 
-            return self.root_object
+        return self.root_object
