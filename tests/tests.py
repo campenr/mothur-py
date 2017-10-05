@@ -45,18 +45,28 @@ class Test(unittest.TestCase):
         return
 
     def test_dual_func(self):
-        """Test running a function from mothur that has two words."""
+        """Test running a function from mothur thathas two words."""
 
         # reset current files/dirs
         self.reset_current()
 
-        fasta_file = os.path.join('tests', 'test_data', 'test_fasta_1.fasta')
         self.mothur.summary.seqs(fasta='test_fasta_1.fasta')
 
         return
 
-    def test_mothur_error(self):
-        """Test that when mothur errors python errors as well."""
+    def test_mothur_error_1(self):
+        """Test that when mothur errors with invalid command python errors as well."""
+
+        # reset current files/dirs
+        self.reset_current()
+
+        with self.assertRaises(RuntimeError):
+            self.mothur.invalid.command()
+
+        return
+
+    def test_mothur_error_2(self):
+        """Test that when mothur errors with bad command arguments python errors as well."""
 
         # reset current files/dirs
         self.reset_current()

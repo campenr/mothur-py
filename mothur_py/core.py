@@ -20,17 +20,22 @@ class Mothur:
 
     """
 
-    def __init__(self, current_files=dict(), current_dirs=dict(), verbosity=0, suppress_logfile=False):
+    def __init__(self, current_files=None, current_dirs=None, verbosity=0, suppress_logfile=False):
         """
 
         :param current_files: dictionary type object containing current files for mothur
         :type current_files: dict
         :param verbosity: how verbose the output should be. Can be 0, 1, or 2 where 0 is silent and 2 is most verbose.
         :type verbosity: int
-        :param suppress_logfile: whether to supress the creation of mothur logfiles
+        :param suppress_logfile: whether to suppress the creation of mothur logfiles
         :type suppress_logfile: bool
 
         """
+
+        if current_files is None:
+            current_files = dict()
+        if current_dirs is None:
+            current_dirs = dict()
 
         self.current_files = current_files
         self.current_dirs = current_dirs
@@ -40,10 +45,7 @@ class Mothur:
     def __getattr__(self, command_name):
         """Catches unknown method calls to run them as mothur functions instead."""
 
-        if not command_name.startswith('_'):
-            return MothurCommand(root=self, command_name=command_name)
-
-        raise (AttributeError('%s is not a valid mothur function.' % command_name))
+        return MothurCommand(root=self, command_name=command_name)
 
 
 class MothurCommand:
@@ -184,6 +186,23 @@ class MothurCommand:
                         # decode the line to make downstream processing easier
                         line = line.decode()
 
+                        # ------- check for warning or error messages in mothur output ------- #
+
+                        # mothur prints warning messages starting with a string containing '<<<'
+                        if '<^>' in line:
+                            mothur_warning_flag = True
+
+                        # mothur prints error messages starting with a string containing '***'
+                        if '***' in line:
+                            mothur_error_flag = True
+
+                        # detecting invalid command as mothur does not specify this is an error but really should do
+                        # see https://github.com/mothur/mothur/issues/388 for discussion of this behaviour
+                        if 'Invalid command.' in line:
+                            mothur_error_flag = True
+
+                        # ------- conditionally print output from mothur to screen ------- #
+
                         # only print output if verbosity not zero
                         if self.root_object.verbosity > 0:
 
@@ -194,26 +213,11 @@ class MothurCommand:
                             elif 'mothur > get.current()' in line:
                                 user_input_flag = False
 
-                            # mothur prints warning messages starting with a string containing '<<<'
-                            if '<^>' in line:
-                                mothur_warning_flag = True
-
-                            # mothur prints error messages starting with a string containing '***'
-                            if '***' in line:
-                                mothur_error_flag = True
-
                             # conditionally print output based on flags
                             if self.root_object.verbosity == 1:
                                 if any([user_input_flag, mothur_warning_flag, mothur_error_flag]):
                                     print(line)
                             elif self.root_object.verbosity == 2:
-                                # # list all flags for debug reasons
-                                # print(
-                                #     ' user_input_flag: ', user_input_flag,
-                                #     ' mothur_warning_flag: ', mothur_warning_flag,
-                                #     ' mothur_error_flag: ',  mothur_error_flag,
-                                #     ' parse_current_flag: ', parse_current_flag
-                                # )
                                 print(line)
 
                             # check for current dirs
@@ -242,7 +246,7 @@ class MothurCommand:
             # wait for the subprocess to finish then check for erroneous output or return code
             return_code = p.wait()
 
-            # TODO do we need to check both conditions
+            # need to check both conditions as mothur sometimes does not return zero when it should
             if return_code != 0 or mothur_error_flag:
                 raise(RuntimeError('Mothur encounted an error with return_code=%s and mothur_error_flag=%s' %
                                    (return_code, mothur_error_flag)))
@@ -257,7 +261,7 @@ class MothurCommand:
             # conditionally cleanup logfile
             if self.root_object.suppress_logfile is True:
                 # need to append output directory to logfile path if it has been set else we won't be able to find it
-                out_dir = self.root_object.current_dirs.get('output', False)
+                out_dir = self.root_object.current_dirs.get('output', '')
                 if out_dir:
                     logfile = os.path.join(out_dir, logfile)
 
