@@ -59,7 +59,7 @@ class MothurCommand:
         """
 
         :param root: the object at the root of the MothurCommand tree
-        :type root: core.Mothur
+        :type root: mothur_py.Mothur
         :param command_name: the name of this class instance
         :type command_name: str
 
