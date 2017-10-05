@@ -123,8 +123,8 @@ IPython) notebook with `verbosity=1`, in which case you already have a record of
 are superfluous.
 
 **Note:** Currently, due to the way that mothur creates the logfiles, a logfile will always be created BUT it will be 
-cleaned up upon successful exectuion if `suppress_logfile=True`. However, if mothur fails to successfully execute, i.e. 
-execution hangs or is interrupted, the logfile will not be cleaned up. For relevent discussion of this behaviour in 
+cleaned up upon successful execution if `suppress_logfile=True`. However, if mothur fails to successfully execute, i.e. 
+execution hangs or is interrupted, the logfile will not be cleaned up. For relevant discussion of this behaviour in 
 mothur see [here](https://github.com/mothur/mothur/issues/281) and [here](https://github.com/mothur/mothur/issues/377).
 
 You can also instantiate the `Mothur` object with your desired configuration options.

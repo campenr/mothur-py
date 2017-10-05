@@ -7,7 +7,7 @@ For full license terms see LICENSE.txt
 
 """
 
-# mothur-py v0.2.0
+# mothur-py v0.2.1
 
 from subprocess import PIPE, Popen, STDOUT
 import random
@@ -152,7 +152,7 @@ class MothurCommand:
                 rn = random.randint(10000, 99999)
                 logfile_path = 'mothur.py.%d.logfile' % rn
 
-                out_dir = self.root_object.current_dirs.get('output', False)
+                out_dir = self.root_object.current_dirs.get('output', '')
                 if out_dir:
                     logfile_path = os.path.join(out_dir, logfile_path)
                 if not os.path.isfile(logfile_path):
@@ -239,7 +239,8 @@ class MothurCommand:
                                 self.root_object.current_files[current_file_type] = current_file_name
 
                             # check for current files
-                            # mothur prints out the current files after the line containing 'Current files saved by mothur:'
+                            # mothur prints out the current files after the line containing 'Current files saved by
+                            # mothur:' so we do this check AFTER parsing current file information from the line
                             if 'Current files saved by mothur:' in line:
                                 parse_current_flag = True
 
@@ -248,7 +249,7 @@ class MothurCommand:
 
             # need to check both conditions as mothur sometimes does not return zero when it should
             if return_code != 0 or mothur_error_flag:
-                raise(RuntimeError('Mothur encounted an error with return_code=%s and mothur_error_flag=%s' %
+                raise(RuntimeError('Mothur encountered an error with return_code=%s and mothur_error_flag=%s' %
                                    (return_code, mothur_error_flag)))
 
         except KeyboardInterrupt:
@@ -265,11 +266,11 @@ class MothurCommand:
                 if out_dir:
                     logfile = os.path.join(out_dir, logfile)
 
-                # TODO: Mothur only renames the logfile to something predictable if exits properly, else this will fail
-                # TODO: see https://github.com/mothur/mothur/issues/281 and https://github.com/mothur/mothur/issues/377
+                # Mothur only renames the logfile to something predictable if exits properly, else this will fail
+                # see https://github.com/mothur/mothur/issues/281 and https://github.com/mothur/mothur/issues/377
                 try:
                     os.remove(logfile)
                 except FileNotFoundError:
-                    print('[WARNING]: could not delete mothur logfile')
+                    print('[WARNING]: could not delete mothur logfile. You will need to manually remove it.')
 
         return self.root_object

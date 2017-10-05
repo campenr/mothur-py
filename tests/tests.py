@@ -4,6 +4,7 @@ from shutil import rmtree
 
 from mothur_py.core import Mothur
 
+
 class Test(unittest.TestCase):
 
     def reset_current(self):
@@ -33,7 +34,7 @@ class Test(unittest.TestCase):
 
         return
 
-    def test_singlular_func(self):
+    def test_singular_func(self):
         """Test running a function from mothur that has only one word."""
 
         # reset current files/dirs manually to avoid issue with help() if there are current dirs set
@@ -45,7 +46,7 @@ class Test(unittest.TestCase):
         return
 
     def test_dual_func(self):
-        """Test running a function from mothur thathas two words."""
+        """Test running a function from mothur that has two words."""
 
         # reset current files/dirs
         self.reset_current()

@@ -2,7 +2,7 @@
 
 from setuptools import setup, find_packages
 
-# Get the long description from the README.md, coverted to .rst if possible
+# Get the long description from the README.md, converted to .rst if possible
 try:
     import pypandoc
     long_description = pypandoc.convert('README.md', 'rst')
@@ -13,7 +13,7 @@ except(IOError, ImportError):
 
 setup(
     name="mothur_py",
-    version="0.2.0",
+    version="0.2.1",
     description="Python wrapper for the bioinformatics tool mothur",
     long_description=long_description,
     url="https://github.com/campenr/mothur_py",
