@@ -93,6 +93,10 @@ class MothurCommand:
 
         # --------------- initialise variables --------------- #
 
+        # results containers
+        new_current_dirs = dict()
+        new_current_files = dict()
+
         # output flags
         user_input_flag = False
         mothur_warning_flag = False
@@ -202,7 +206,13 @@ class MothurCommand:
                         if 'Invalid command.' in line:
                             mothur_error_flag = True
 
-                        # ------- conditionally parse current files and dirs from output ------- #
+                        # ------- conditionally parse current dirs and files from output ------- #
+
+                        # check for current dirs
+                        for key in current_dir_keys:
+                            if key in line:
+                                current_dir = line.split(' ')[-1].split('\n')[0]
+                                new_current_dirs[current_dir_headers[key]] = current_dir
 
                         # conditionally reset flag for parsing current files from stdout
                         # mothur prints a blank line after the list of current files
@@ -214,7 +224,7 @@ class MothurCommand:
                             current_file = line.split('=')
                             current_file_type = current_file[0]
                             current_file_name = current_file[1]
-                            self.root_object.current_files[current_file_type] = current_file_name
+                            new_current_files[current_file_type] = current_file_name
 
                         # check for current files
                         # mothur prints out the current files after the line containing 'Current files saved by
@@ -241,12 +251,6 @@ class MothurCommand:
                             elif self.root_object.verbosity == 2:
                                 print(line)
 
-                            # check for current dirs
-                            for key in current_dir_keys:
-                                if key in line:
-                                    current_dir = line.split(' ')[-1].split('\n')[0]
-                                    self.root_object.current_dirs[current_dir_headers[key]] = current_dir
-
             # wait for the subprocess to finish then check for erroneous output or return code
             return_code = p.wait()
 
@@ -262,6 +266,12 @@ class MothurCommand:
             raise(KeyboardInterrupt('User terminated the process.'))
 
         finally:
+            # update root mother object with new current dirs and files
+            for k, v in new_current_dirs.items():
+                self.root_object.current_dirs[k] = v
+            for k, v in new_current_files.items():
+                self.root_object.current_dirs[k] = v
+
             # conditionally cleanup logfile
             if self.root_object.suppress_logfile is True:
                 # need to append output directory to logfile path if it has been set else we won't be able to find it
