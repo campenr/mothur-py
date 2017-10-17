@@ -179,6 +179,7 @@ class MothurCommand:
                         raise (ValueError('verbosity must be 0, 1, or 2.'))
 
                     else:
+
                         # strip newline characters as print statement will insert its own
                         line = line.replace(b'\r', b'')
                         line = line.rsplit(b'\n')[0]
@@ -200,6 +201,26 @@ class MothurCommand:
                         # see https://github.com/mothur/mothur/issues/388 for discussion of this behaviour
                         if 'Invalid command.' in line:
                             mothur_error_flag = True
+
+                        # ------- conditionally parse current files and dirs from output ------- #
+
+                        # conditionally reset flag for parsing current files from stdout
+                        # mothur prints a blank line after the list of current files
+                        if line == '':
+                            parse_current_flag = False
+
+                        # conditionally parse current files from stdout
+                        if parse_current_flag:
+                            current_file = line.split('=')
+                            current_file_type = current_file[0]
+                            current_file_name = current_file[1]
+                            self.root_object.current_files[current_file_type] = current_file_name
+
+                        # check for current files
+                        # mothur prints out the current files after the line containing 'Current files saved by
+                        # mothur:' so we do this check AFTER parsing current file information from the line
+                        if 'Current files saved by mothur:' in line:
+                            parse_current_flag = True
 
                         # ------- conditionally print output from mothur to screen ------- #
 
@@ -225,24 +246,6 @@ class MothurCommand:
                                 if key in line:
                                     current_dir = line.split(' ')[-1].split('\n')[0]
                                     self.root_object.current_dirs[current_dir_headers[key]] = current_dir
-
-                            # conditionally reset flag for parsing current files from stdout
-                            # mothur prints a blank line after the list of current files
-                            if line == '':
-                                parse_current_flag = False
-
-                            # conditionally parse current files from stdout
-                            if parse_current_flag:
-                                current_file = line.split('=')
-                                current_file_type = current_file[0]
-                                current_file_name = current_file[1]
-                                self.root_object.current_files[current_file_type] = current_file_name
-
-                            # check for current files
-                            # mothur prints out the current files after the line containing 'Current files saved by
-                            # mothur:' so we do this check AFTER parsing current file information from the line
-                            if 'Current files saved by mothur:' in line:
-                                parse_current_flag = True
 
             # wait for the subprocess to finish then check for erroneous output or return code
             return_code = p.wait()
