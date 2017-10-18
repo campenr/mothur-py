@@ -286,4 +286,4 @@ class MothurCommand:
                 except FileNotFoundError:
                     print('[WARNING]: could not delete mothur logfile. You will need to manually remove it.')
 
-        return self.root_object
+        return
