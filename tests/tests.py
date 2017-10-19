@@ -46,7 +46,12 @@ class Test(unittest.TestCase):
         return
 
     def test_dual_func(self):
-        """Test running a function from mothur that has two words."""
+        """
+        Test running a function from mothur that has two words.
+        
+        Also tests whether passing named paramter works.
+        
+        """
 
         # reset current files/dirs
         self.reset_current()
@@ -54,6 +59,18 @@ class Test(unittest.TestCase):
         self.mothur.summary.seqs(fasta='test_fasta_1.fasta')
 
         return
+
+    def test_unnamed_parameter(self):
+        """Test running a function with an unnamed parameter."""
+
+        # reset current files/dirs manually to avoid issue with help() if there are current dirs set
+        self.mothur.current_files = dict()
+        self.mothur.current_dirs = dict()
+
+        self.mothur.help('summary.seqs')
+
+        return
+
 
     def test_mothur_error_1(self):
         """Test that when mothur errors with invalid command python errors as well."""
