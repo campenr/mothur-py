@@ -45,8 +45,12 @@ class Mothur:
     def __getattr__(self, command_name):
         """Catches unknown method calls to run them as mothur functions instead."""
 
-        return MothurCommand(root=self, command_name=command_name)
+        if command_name.startswith('_'):
+            # no valid mothur commands begin with underscores
+            # also catches checks for potentially non-implemented dunder methods i.e. `__deepcopy__`
+            raise (AttributeError('%s is not a valid mothur function.' % command_name))
 
+        return MothurCommand(root=self, command_name=command_name)
 
 class MothurCommand:
     """
