@@ -7,7 +7,7 @@ For full license terms see LICENSE.txt
 
 """
 
-# mothur-py v0.2.1
+# mothur-py v0.2.2
 
 from subprocess import PIPE, Popen, STDOUT
 import random
@@ -20,13 +20,15 @@ class Mothur:
 
     """
 
-    def __init__(self, current_files=None, current_dirs=None, verbosity=0, suppress_logfile=False):
+    def __init__(self, current_files=None, current_dirs=None, verbosity=0, mothur_seed=None, suppress_logfile=False):
         """
 
         :param current_files: dictionary type object containing current files for mothur
         :type current_files: dict
         :param verbosity: how verbose the output should be. Can be 0, 1, or 2 where 0 is silent and 2 is most verbose.
         :type verbosity: int
+        :param mothur_seed: number for mothur to seed random number generation with
+        :type mothur_seed: int
         :param suppress_logfile: whether to suppress the creation of mothur logfiles
         :type suppress_logfile: bool
 
@@ -40,6 +42,7 @@ class Mothur:
         self.current_files = current_files
         self.current_dirs = current_dirs
         self.verbosity = verbosity
+        self.mothur_seed = mothur_seed
         self.suppress_logfile = suppress_logfile
 
     def __getattr__(self, command_name):
@@ -136,6 +139,18 @@ class MothurCommand:
             mothur_args = formatted_args
             if len(formatted_kwargs) > 0:
                 mothur_args = mothur_args + ',' + formatted_kwargs
+
+        # conditionally set the seed for mothur execution
+        if self.root_object.mothur_seed is not None:
+
+            # not all mothur commands are compatible with setting the seed
+            set_seed_uncompt = ['help']
+            if self.command_name not in set_seed_uncompt:
+
+                if (len(args) + len(kwargs)) > 0:
+                    mothur_args = mothur_args + ',seed=%s' % self.root_object.mothur_seed
+                else:
+                    mothur_args = 'seed=%s' % self.root_object.mothur_seed
 
         # create commands
         commands = list()

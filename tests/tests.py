@@ -24,6 +24,7 @@ class Test(unittest.TestCase):
         self.mothur = Mothur()
         self.mothur.suppress_logfile = True
         self.mothur.verbosity = 0
+        self.mothur.mothur_seed = 12345
 
         # setup directories for testing
         test_dir = os.path.join(os.getcwd(), 'tests')
