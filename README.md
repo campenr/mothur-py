@@ -1,4 +1,4 @@
-# mothur_py
+# mothur-py
 
 Copyright &#169; 2017, Richard Campen. All rights reserved.
 
