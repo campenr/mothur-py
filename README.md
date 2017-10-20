@@ -69,6 +69,49 @@ itself.
 
 ---
 
+### Configuration 
+    
+The `Mothur` class stores configuration options for how mothur is executed. These options include `verbosity` to control
+how much output there is, `mothur_seed` to control the seed used by mothur for random number generation, and 
+`suppress_logfile` which suppresses the creation of the mothur logfile.
+
+When `verbosity` is set to `0` there is no output printed, `1` prints the normal output as would be seen with command 
+line execution (minus the header that contains the mothur version and runtime information), and `2` displays all output
+including the commands being executed behind the scenes to enable the `current` keyword to work. The default option is 
+`0`, with `1` being useful when you want to see the standard mothur output, and `2` being useful for debugging purposes. 
+
+If `mothur_seed` is set to a valid integer then this number will be passed to mothur to be used for random number
+generation. This is implemented by adding the `seed=<your seed here>` named parameter to each mothur command. Not all 
+commands will accept having a seed set. For these commands you may need to set the `mothur_seed` parameter to `None`
+for the execution of that command, e.g.:
+ 
+    m = Mothur(mothur_seed=12345)
+    
+    # summary.seqs() allows setting the seed so this will run fine
+    m.summary.seqs(fasta='current')
+    
+    # help() does not accept having the seed set so need to alter that value temporarily, otherwise an error will occur
+    seed = m.mothur_seed
+    m.mothur_seed = None
+    m.help()
+    m.mothur_seed = seed
+    
+
+The `supress_logfile` option is useful when you don't want the log files, such as when running in an Jupyter (nee 
+IPython) notebook with `verbosity=1`, in which case you already have a record of mothur's output and the mothur logfiles
+are superfluous.
+
+**Note:** Currently, due to the way that mothur creates the logfiles, a logfile will always be created BUT it will be 
+cleaned up upon successful execution if `suppress_logfile=True`. However, if mothur fails to successfully execute, i.e. 
+execution hangs or is interrupted, the logfile will not be cleaned up. For relevant discussion of this behaviour in 
+mothur see [here](https://github.com/mothur/mothur/issues/281) and [here](https://github.com/mothur/mothur/issues/377).
+
+You can also instantiate the `Mothur` object with your desired configuration options.
+
+    m = Mothur(verbosity=1, suppress_logfile=True)
+    
+---
+
 ### Advanced Usage
 
 The current files and current directories for use in mothur are stored in dictionary attributes of the `Mothur` 
@@ -106,32 +149,9 @@ where we classified at different cutoffs, we could have instead controlled the i
         m.current_dirs['output'] = 'cutoff_%s' % cutoff
         m.current_dirs['input'] = '.'
 
+
 ---
 
-### Configuration 
-    
-The `Mothur` class stores configuration options for how mothur is executed. These options include `verbosity` to control
-how much output there is, and `suppress_logfile` which suppresses the creation of the mothur logfile. 
-
-When `verbosity` is set to `0` there is no output printed, `1` prints the normal output as would be seen with command 
-line execution (minus the header that contains the mothur version and runtime information), and `2` displays all output
-including the commands being executed behind the scenes to enable the `current` keyword to work. The default option is 
-`0`, with `1` being useful when you want to see the standard mothur output, and `2` being useful for debugging purposes. 
-
-The `supress_logfile` option is useful when you don't want the log files, such as when running in an Jupyter (nee 
-IPython) notebook with `verbosity=1`, in which case you already have a record of mothur's output and the mothur logfiles
-are superfluous.
-
-**Note:** Currently, due to the way that mothur creates the logfiles, a logfile will always be created BUT it will be 
-cleaned up upon successful execution if `suppress_logfile=True`. However, if mothur fails to successfully execute, i.e. 
-execution hangs or is interrupted, the logfile will not be cleaned up. For relevant discussion of this behaviour in 
-mothur see [here](https://github.com/mothur/mothur/issues/281) and [here](https://github.com/mothur/mothur/issues/377).
-
-You can also instantiate the `Mothur` object with your desired configuration options.
-
-    m = Mothur(verbosity=1, suppress_logfile=True)
-    
----
 
 ### ToDo:
 

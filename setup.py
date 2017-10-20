@@ -16,7 +16,7 @@ setup(
     version="0.2.3",
     description="Python wrapper for the bioinformatics tool mothur",
     long_description=long_description,
-    url="https://github.com/campenr/mothur_py",
+    url="https://github.com/campenr/mothur-py",
     author="Richard Campen",
     author_email="richard@campen.co",
     license="Modified BSD License",
@@ -33,7 +33,7 @@ setup(
         "Topic :: Scientific/Engineering :: Bio-Informatics"
     ],
 
-    keywords="bioinformatics mothur",
+    keywords="mothur bioinformatics",
     packages=find_packages(),
     include_package_data=True
 )
