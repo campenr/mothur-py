@@ -7,7 +7,7 @@ For full license terms see LICENSE.txt
 
 """
 
-# mothur-py v0.2.2
+# mothur-py v0.2.3
 
 from subprocess import PIPE, Popen, STDOUT
 import random
