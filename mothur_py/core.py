@@ -289,7 +289,7 @@ class MothurCommand:
             for k, v in new_current_dirs.items():
                 self.root_object.current_dirs[k] = v
             for k, v in new_current_files.items():
-                self.root_object.current_dirs[k] = v
+                self.root_object.current_files[k] = v
 
             # conditionally cleanup logfile
             if self.root_object.suppress_logfile is True:
@@ -303,6 +303,6 @@ class MothurCommand:
                 try:
                     os.remove(logfile)
                 except FileNotFoundError:
-                    print('[WARNING]: could not delete mothur logfile. You will need to manually remove it.')
+                    print('[mothur-py WARNING]: could not delete mothur logfile. You will need to manually remove it.')
 
         return
