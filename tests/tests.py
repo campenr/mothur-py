@@ -7,24 +7,23 @@ from mothur_py.core import Mothur
 
 class Test(unittest.TestCase):
 
-    def reset_current(self):
+    def set_current_dirs(self, mothur_obj):
         """Rests current files and dirs to initial state."""
 
-        self.mothur.current_files = dict()
-        self.mothur.current_dirs = dict()
-
-        self.mothur.current_dirs['input'] = self.test_input_dir
-        self.mothur.current_dirs['output'] = self.test_output_dir
+        mothur_obj.current_dirs['input'] = self.test_input_dir
+        mothur_obj.current_dirs['output'] = self.test_output_dir
 
         return
 
     def setUp(self):
         """Sets up testing variables."""
 
-        self.mothur = Mothur()
-        self.mothur.suppress_logfile = True
-        self.mothur.verbosity = 0
-        self.mothur.mothur_seed = 12345
+        # setup init variables
+        self.init_vars = {
+            'suppress_logfile': True,
+            'verbosity': 0,
+            'mothur_seed': 12345
+        }
 
         # setup directories for testing
         test_dir = os.path.join(os.getcwd(), 'tests')
@@ -38,60 +37,61 @@ class Test(unittest.TestCase):
     def test_singular_func(self):
         """Test running a function from mothur that has only one word."""
 
-        # reset current files/dirs manually to avoid issue with help() if there are current dirs set
-        self.mothur.current_files = dict()
-        self.mothur.current_dirs = dict()
-
-        self.mothur.help()
+        m = Mothur(**self.init_vars)
+        m.help()
 
         return
 
     def test_dual_func(self):
         """
         Test running a function from mothur that has two words.
-        
+
         Also tests whether passing named paramter works.
-        
+
         """
 
-        # reset current files/dirs
-        self.reset_current()
-
-        self.mothur.summary.seqs(fasta='test_fasta_1.fasta')
+        m = Mothur(**self.init_vars)
+        self.set_current_dirs(m)
+        m.summary.seqs(fasta='test_fasta_1.fasta')
 
         return
 
     def test_unnamed_parameter(self):
         """Test running a function with an unnamed parameter."""
 
-        # reset current files/dirs manually to avoid issue with help() if there are current dirs set
-        self.mothur.current_files = dict()
-        self.mothur.current_dirs = dict()
-
-        self.mothur.help('summary.seqs')
+        m = Mothur(**self.init_vars)
+        m.help('summary.seqs')
 
         return
 
+    def test_existing_current_files(self):
+        """Test that mothur remembers current files."""
+
+        m = Mothur(**self.init_vars)
+        self.set_current_dirs(m)
+        m.summary.seqs(fasta='test_fasta_1.fasta')
+        m.summary.seqs()
+
+        return
 
     def test_mothur_error_1(self):
         """Test that when mothur errors with invalid command python errors as well."""
 
-        # reset current files/dirs
-        self.reset_current()
+        m = Mothur(**self.init_vars)
+        self.set_current_dirs(m)
 
         with self.assertRaises(RuntimeError):
-            self.mothur.invalid.command()
+            m.invalid.command()
 
         return
 
     def test_mothur_error_2(self):
         """Test that when mothur errors with bad command arguments python errors as well."""
 
-        # reset current files/dirs
-        self.reset_current()
-
+        m = Mothur(**self.init_vars)
+        self.set_current_dirs(m)
         with self.assertRaises(RuntimeError):
-            self.mothur.summary.seqs()
+            m.summary.seqs()
 
         return
 
