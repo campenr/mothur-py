@@ -22,7 +22,7 @@ class Test(unittest.TestCase):
         self.init_vars = {
             'suppress_logfile': True,
             'verbosity': 0,
-            'mothur_seed': 12345
+            'mothur_seed': 54321
         }
 
         # setup directories for testing
@@ -94,6 +94,22 @@ class Test(unittest.TestCase):
             m.summary.seqs()
 
         return
+
+    def test_python_bool(self):
+        """Test that python bools are correctly converted into mothur compatible boolean values."""
+
+        m = Mothur(**self.init_vars)
+        self.set_current_dirs(m)
+        m.pcr.seqs(fasta='test_fasta_1.fasta', start=20, keepdots=False)
+        m.pcr.seqs(fasta='test_fasta_1.fasta', start=20, keepdots=True)
+
+        return
+
+    # def test_python_iterable(self):
+    #     """Test that python iterables are correctly converted into mothur compatible lists."""
+    #
+    #     return
+
 
     def tearDown(self):
         """Cleans up testing environment."""
