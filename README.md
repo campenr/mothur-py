@@ -11,13 +11,22 @@ See LICENSE.txt for full license conditions.
 A python wrapper for the command line version of the bioinformatics tool 
 [mothur](https://www.mothur.org/).
 
-Mothur_py was inspired by the [ipython-mothurmagic](https://github.com/SchlossLab/ipython-mothurmagic) module, but with an 
+Mothur-py was inspired by the [ipython-mothurmagic](https://github.com/SchlossLab/ipython-mothurmagic) module, but with an
 intention to provide a more general python wrapper that would work outside of the IPython/Jupyter notebook environment, 
 as well as provide support for mothur's `current` keyword functionality.
 
 **Note:** This module has only been tested with mothur v1.39.5 and python 3.6 on Windows 10 (64-bit). It should in 
 theory work with other versions of mothur, but the older the version the less likely as this module relies upon some of 
 the more recent mothur commands/output to function properly.
+
+---
+
+### Installation
+
+To install the latest release version you can just `pip install mothur-py`. To install the most up to date code you should
+download/clone this repository and create a binary distribution using `python setup.py bdist` that will create a zip file
+in the `dist` folder. You should then pip install this zip file using `pip install <zip_file_name>`. The advantage of this
+method over just running `python setup.py install` is that you can easily remove or update the package via pip.
 
 ---
 
@@ -38,20 +47,20 @@ within the command line version of mothur:
     # run the mothur help command
     m.help()
 
-Unlike the command line version, command parameters must be passed as strings, integers, or floats:
+Command parameters can either be passed as python native types (i.e. strings, integers, floats, booleans, lists) *or* as
+strings that match the format that mothur would expect:
 
     # running make contigs using str input for file parameter, and int for processor paramenter
     m.make.contigs(file='basic_usage.files', processors=2)
+
+    # running summary.single, passing calculators as mothur formatted list
+    m.summary.single(shared='current', calc='nseqs-sobs-coverage-shannon-simpson')
+
+    # running summary.single, passing calculators as python list also works
+    m.summary.single(shared='current', calc=['nseqs', 'sobs', 'coverage', 'shannon', 'simpson'])
+
     
-Failing to do so will generally result in python raising a `NameError`:
-
-    # running make contigs in an interpreter session without passing file parameter as a string
-    >>> m.make.contigs(file=basic_usage.files)
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in <module>
-    NameError: name 'basic_usage' is not defined
-
-There is also full implementation of the `current` keyword used in the command line version of mothur:    
+There is also full implementation of the `current` keyword used in the command line version of mothur:
        
     # run the mothur summary.seqs command using the 'current' option
     # NOTE: current is being passed as a string
@@ -108,7 +117,7 @@ mothur see [here](https://github.com/mothur/mothur/issues/281) and [here](https:
 
 You can also instantiate the `Mothur` object with your desired configuration options.
 
-    m = Mothur(verbosity=1, suppress_logfile=True)
+    m = Mothur(verbosity=1, mothur_seed=543210, suppress_logfile=True)
     
 ---
 
@@ -131,7 +140,8 @@ perform classification of sequences at multiple defined cutoffs as follows:
         # save outputs to different folders, but keep input the same
         output_dir = 'cutoff_%s' % cutoff
         m.set.dir(output=output_dir, input='.')
-        m.classify.seqs(fasta='current', count='current', reference='reference.fasta', taxonomy='referenece.tax', cutoff=cutoff)
+        m.classify.seqs(fasta='current', count='current', reference='reference.fasta', taxonomy='referenece.tax',
+        cutoff=cutoff)
         
 This may be a convoluted example, but it demonstrates the functionality well. One note of caution with this approach is 
 that depending on the mothur command and the parameter you are changing, you may be overwriting your output files as you 
@@ -141,21 +151,23 @@ You can also instantiate a `Mothur` instance with predefined current file and di
 
     m = Mothur(current_files=my_predefined_files_dict, current_dirs=my_predefined_files_dict)
 
-You can modify the contents of these dictionaries in between mothur commands. In the previous example 
-where we classified at different cutoffs, we could have instead controlled the input and output directories as such:
+This can be convenient for saving and loading the state of a mothur object to/from file as such:
+
+    import json
+
+    # save state of mothur object, m, to json file
+    with open('mothur_object.json', 'w') as out_handle:
+        json.dump(vars(m), out_handle)
+
+    # can reload mothur object from the json file
+    with open('mothur_object.json', 'r') as in_handle:
+        m = Mothur(**json.load(in_handle))
+
+You can also modify the contents of these dictionaries in between mothur commands. In the previous example
+where we classified at different cutoffs, we could have instead controlled the input and output directories in python
+instead of withing mothur:
 
     for cutoff in [70, 80, 90]:   
         # save outputs to different folders, but keep input the same
         m.current_dirs['output'] = 'cutoff_%s' % cutoff
         m.current_dirs['input'] = '.'
-
-
----
-
-
-### ToDo:
-
-* improve unittest code coverage
-* test previous mothur releases
-* test different OS's
-* test older python releases, especially 2.7
