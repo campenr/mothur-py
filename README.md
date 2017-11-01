@@ -24,8 +24,8 @@ the more recent mothur commands/output to function properly.
 ### Installation
 
 To install the latest release version you can just `pip install mothur-py`. To install the most up to date code you should
-download/clone this repository and create a binary distribution using `python setup.py bdist` that will create a zip file
-in the `dist` folder. You can then install mothur-py with pip from the zip file using `pip install <zip_file_name>`. The
+download/clone this repository and create a binary distribution using `python setup.py bdist_wheel` that will create a .whl file
+in the `dist` folder. You can then install mothur-py with pip from the .whl file using `pip install <wheel_file_name>`. The
 advantage of this method over just running `python setup.py install` is that you can easily remove or update the package via pip.
 
 ---
