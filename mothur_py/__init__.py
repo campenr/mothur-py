@@ -7,6 +7,6 @@ For full license terms see LICENSE.txt
 
 """
 
-# mothur-py v0.2.3
+# mothur-py v0.2.4
 
 from .core import Mothur, MothurCommand

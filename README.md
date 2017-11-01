@@ -76,6 +76,10 @@ These are stored as dictionary attributes of the `Mothur` object and can be acce
 dictionaries with the file extension as the key. This issue does not occur for current files and dirs so they are stored as the actual
 values, not as lists of the values, with the key being the type of file according to mothur (usually the same as the file extension).
 
+**NOTE:** Each successive execution of a mothur command will update the current files and dirs, but will completely overwrite the saved output
+files. This is so that you have access to the current files generated more than one command ago, but do not get access to output from more than
+one command ago, which would be confusing.
+
 There is also implementation of the `current` keyword used in the command line version of mothur:
        
     # run the mothur summary.seqs command using the 'current' option

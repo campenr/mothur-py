@@ -13,7 +13,7 @@ except(IOError, ImportError):
 
 setup(
     name="mothur_py",
-    version="0.2.3",
+    version="0.2.4",
     description="Python wrapper for the bioinformatics tool mothur",
     long_description=long_description,
     url="https://github.com/campenr/mothur-py",
