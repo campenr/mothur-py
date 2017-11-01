@@ -25,8 +25,8 @@ the more recent mothur commands/output to function properly.
 
 To install the latest release version you can just `pip install mothur-py`. To install the most up to date code you should
 download/clone this repository and create a binary distribution using `python setup.py bdist` that will create a zip file
-in the `dist` folder. You should then pip install this zip file using `pip install <zip_file_name>`. The advantage of this
-method over just running `python setup.py install` is that you can easily remove or update the package via pip.
+in the `dist` folder. You can then install mothur-py with pip from the zip file using `pip install <zip_file_name>`. The
+advantage of this method over just running `python setup.py install` is that you can easily remove or update the package via pip.
 
 ---
 
@@ -54,13 +54,29 @@ strings that match the format that mothur would expect:
     m.make.contigs(file='basic_usage.files', processors=2)
 
     # running summary.single, passing calculators as mothur formatted list
-    m.summary.single(shared='current', calc='nseqs-sobs-coverage-shannon-simpson')
+    m.summary.single(shared='basic_usage.shared', calc='nseqs-sobs-coverage-shannon-simpson')
 
     # running summary.single, passing calculators as python list also works
-    m.summary.single(shared='current', calc=['nseqs', 'sobs', 'coverage', 'shannon', 'simpson'])
+    m.summary.single(shared='basic_usage.shared', calc=['nseqs', 'sobs', 'coverage', 'shannon', 'simpson'])
 
-    
-There is also full implementation of the `current` keyword used in the command line version of mothur:
+The `Mothur` object saves a record of the current directories and files and the output files from mothur after executing each command.
+These are stored as dictionary attributes of the `Mothur` object and can be accessed easily:
+
+    # run a command
+    m.summary.seqs(fasta='basic_usage.fasta')
+
+    # get current output directory
+    out_dir = m.current_dirs['output']
+
+    # get output file
+    with open(m.output_files['summary'][0], 'r') as in_handle:
+        in_handle.read()
+
+**NOTE:** Due to the possibility of multiple output files with the same extension the output files are saved as lists within the attribute
+dictionaries with the file extension as the key. This issue does not occur for current files and dirs so they are stored as the actual
+values, not as lists of the values, with the key being the type of file according to mothur (usually the same as the file extension).
+
+There is also implementation of the `current` keyword used in the command line version of mothur:
        
     # run the mothur summary.seqs command using the 'current' option
     # NOTE: current is being passed as a string
@@ -165,7 +181,7 @@ This can be convenient for saving and loading the state of a mothur object to/fr
 
 You can also modify the contents of these dictionaries in between mothur commands. In the previous example
 where we classified at different cutoffs, we could have instead controlled the input and output directories in python
-instead of withing mothur:
+instead of within mothur:
 
     for cutoff in [70, 80, 90]:   
         # save outputs to different folders, but keep input the same

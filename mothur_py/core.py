@@ -21,11 +21,16 @@ class Mothur:
 
     """
 
-    def __init__(self, current_files=None, current_dirs=None, verbosity=0, mothur_seed=None, suppress_logfile=False):
+    def __init__(self, current_files=None, current_dirs=None, output_files=None, verbosity=0, mothur_seed=None,
+                 suppress_logfile=False):
         """
 
         :param current_files: dictionary type object containing current files for mothur
-        :type current_files: dict
+        :type current_files: dict or None
+        :param current_dirs: dictionary type object containing current directories for mothur
+        :type current_dirs: dict or None
+        :param output_files: dictionary type object containing lists of the latest output files from mothur
+        :type output_files: collections.defaultdict(list) or None
         :param verbosity: how verbose the output should be. Can be 0, 1, or 2 where 0 is silent and 2 is most verbose.
         :type verbosity: int
         :param mothur_seed: number for mothur to seed random number generation with
@@ -39,9 +44,12 @@ class Mothur:
             current_files = dict()
         if current_dirs is None:
             current_dirs = dict()
+        if output_files is None:
+            output_files = collections.defaultdict(list)
 
         self.current_files = current_files
         self.current_dirs = current_dirs
+        self.output_files = output_files
         self.verbosity = verbosity
         self.mothur_seed = mothur_seed
         self.suppress_logfile = suppress_logfile
@@ -55,6 +63,10 @@ class Mothur:
             raise (AttributeError('%s is not a valid mothur function.' % command_name))
 
         return MothurCommand(root=self, command_name=command_name)
+
+    def __str__(self):
+        return '<Mothur object at %s>' % int(id(self))
+
 
 class MothurCommand:
     """
@@ -104,6 +116,7 @@ class MothurCommand:
         # results containers
         new_current_dirs = dict()
         new_current_files = dict()
+        new_output_files = collections.defaultdict(list)
 
         # output flags
         user_input_flag = False
@@ -112,6 +125,7 @@ class MothurCommand:
 
         # parsing flags
         parse_current_flag = False
+        parse_output_flag = False
 
         # dict containing strings to find in lines, with matching current_dirs keys
         # mothur prints out the current directory for each category on the same line at the matched string
@@ -211,7 +225,15 @@ class MothurCommand:
                         if 'Invalid command.' in line:
                             mothur_error_flag = True
 
-                        # ------- conditionally parse current dirs and files from output ------- #
+                        # ------- check for output from the user specified command ------- #
+
+                        # user input spans output from the base command until the get.current() command
+                        if base_command_query in line:
+                            user_input_flag = True
+                        elif 'mothur > get.current()' in line:
+                            user_input_flag = False
+
+                        # ------- conditionally parse current dirs and files from stdout ------- #
 
                         # check for current dirs
                         for key in current_dir_keys:
@@ -237,17 +259,36 @@ class MothurCommand:
                         if 'Current files saved by mothur:' in line:
                             parse_current_flag = True
 
-                        # ------- conditionally print output from mothur to screen ------- #
+                        # ------- conditionally parse output files from stdout ------- #
+
+                        # conditionally reset flag for parsing output files from stdout
+                        # mothur prints a blank line after the list of output files
+                        if line == '':
+                            parse_output_flag = False
+
+                        # conditionally parse current files from stdout
+                        # because multiple files with the same extension can be returned we save them in a list
+                        if parse_output_flag:
+                            output_file_path = line.split(os.path.sep)
+                            if len(output_file_path) == 1:
+                                output_file_name = output_file_path
+                            else:
+                                output_file_name = output_file_path[-1]
+                            output_file_type = output_file_name.rsplit('.', 1)[-1]
+                            new_output_files[output_file_type].append(output_file_name)
+
+                        # check for output files
+                        # mothur prints the output files after the line containing 'Output File Names:'
+                        # so we do this check AFTER parsing output file information from the line
+                        # we also check the user_input_flag to avoid saving output files from the background
+                        # commands that are run to enable the 'current' keyword functionality
+                        if 'Output File Names:' in line and user_input_flag:
+                            parse_output_flag = True
+
+                        # ------- conditionally print stdout from mothur to screen ------- #
 
                         # only print output if verbosity not zero
                         if self.root_object.verbosity > 0:
-
-                            # conditionally set flags
-                            # user input spans output from the base command until the get.current() command
-                            if base_command_query in line:
-                                user_input_flag = True
-                            elif 'mothur > get.current()' in line:
-                                user_input_flag = False
 
                             # conditionally print output based on flags
                             if self.root_object.verbosity == 1:
@@ -276,6 +317,9 @@ class MothurCommand:
                 self.root_object.current_dirs[k] = v
             for k, v in new_current_files.items():
                 self.root_object.current_files[k] = v
+
+            # overwrite old output files with latest output files
+            self.root_object.output_files = new_output_files
 
             # conditionally cleanup logfile
             if self.root_object.suppress_logfile is True:
