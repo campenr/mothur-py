@@ -21,10 +21,12 @@ class Mothur:
 
     """
 
-    def __init__(self, current_files=None, current_dirs=None, output_files=None, verbosity=0, mothur_seed=None,
+    def __init__(self, mothur_path=None, current_files=None, current_dirs=None, output_files=None, verbosity=0, mothur_seed=None,
                  suppress_logfile=False):
         """
 
+        :param mothur_path: path to the mothur executable
+        :type mothur_path: str or None
         :param current_files: dictionary type object containing current files for mothur
         :type current_files: dict or None
         :param current_dirs: dictionary type object containing current directories for mothur
@@ -38,6 +40,11 @@ class Mothur:
         :param suppress_logfile: whether to suppress the creation of mothur logfiles
         :type suppress_logfile: bool
 
+        ..note:: if mothur_path is set to None then mothur-py will look for it in the PATH environment variable or in
+        the current working directory. If mothur is not located in either of these two locations then it needs to be
+        specified including the name of the executable, i.e `C:\Path\to\mothur.exe` on windows or `/path/to/mothur` on
+        unix like systems.
+
         """
 
         if current_files is None:
@@ -47,6 +54,7 @@ class Mothur:
         if output_files is None:
             output_files = collections.defaultdict(list)
 
+        self.mothur_path = mothur_path
         self.current_files = current_files
         self.current_dirs = current_dirs
         self.output_files = output_files
@@ -190,8 +198,12 @@ class MothurCommand:
         # --------------- run mothur --------------- #
 
         # run mothur command in command line mode
-        # TODO: add support for variable mothur executable locations
-        p = Popen(['mothur', '#%s' % commands_str], stdout=PIPE, stderr=STDOUT)
+        if self.root_object.mothur_path is None:
+            mothur_path = 'mothur'
+        else:
+            mothur_path = self.root_object.mothur_path
+
+        p = Popen([mothur_path, '#%s' % commands_str], stdout=PIPE, stderr=STDOUT)
 
         try:
             with p.stdout:

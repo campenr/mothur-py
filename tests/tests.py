@@ -34,6 +34,17 @@ class Test(unittest.TestCase):
 
         return
 
+    def test_bad_mothur_path(self):
+        """Test that when mothur errors with invalid mothur_path set."""
+
+        m = Mothur(**self.init_vars, mothur_path='.')
+        self.set_current_dirs(m)
+
+        with self.assertRaises(PermissionError):
+            m.help()
+
+        return
+
     def test_singular_func(self):
         """Test running a function from mothur that has only one word."""
 
