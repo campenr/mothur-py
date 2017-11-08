@@ -21,7 +21,7 @@ class Mothur:
 
     """
 
-    def __init__(self, mothur_path=None, current_files=None, current_dirs=None, output_files=None, verbosity=0, mothur_seed=None,
+    def __init__(self, mothur_path='mothur', current_files=None, current_dirs=None, output_files=None, verbosity=0, mothur_seed=None,
                  suppress_logfile=False):
         """
 
@@ -40,10 +40,9 @@ class Mothur:
         :param suppress_logfile: whether to suppress the creation of mothur logfiles
         :type suppress_logfile: bool
 
-        ..note:: if mothur_path is set to None then mothur-py will look for it in the PATH environment variable or in
-        the current working directory. If mothur is not located in either of these two locations then it needs to be
-        specified including the name of the executable, i.e `C:\Path\to\mothur.exe` on windows or `/path/to/mothur` on
-        unix like systems.
+        ..note:: the default value for mothur_path will work only if mothur is in the PATH environment variable. If
+        mothur is located elsewhere, including in the current working directory, then it needs to be specified including
+        the name of the executable, i.e `C:\\Path\\to\\mothur.exe` on Windows or `/path/to/mothur` on unix like systems.
 
         """
 
@@ -197,13 +196,7 @@ class MothurCommand:
 
         # --------------- run mothur --------------- #
 
-        # run mothur command in command line mode
-        if self.root_object.mothur_path is None:
-            mothur_path = 'mothur'
-        else:
-            mothur_path = self.root_object.mothur_path
-
-        p = Popen([mothur_path, '#%s' % commands_str], stdout=PIPE, stderr=STDOUT)
+        p = Popen([self.root_object.mothur_path, '#%s' % commands_str], stdout=PIPE, stderr=STDOUT)
 
         try:
             with p.stdout:
