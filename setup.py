@@ -13,7 +13,7 @@ except(IOError, ImportError):
 
 setup(
     name="mothur_py",
-    version="0.2.4",
+    version="0.2.5",
     description="Python wrapper for the bioinformatics tool mothur",
     long_description=long_description,
     url="https://github.com/campenr/mothur-py",
@@ -23,13 +23,12 @@ setup(
 
     classifiers=[
         "Development Status :: 4 - Beta",
-        "Environment :: Win32 (MS Windows)",
         "Intended Audience :: End Users/Desktop",
         "Intended Audience :: Science/Research",
         "License :: OSI Approved :: BSD License",
         "Natural Language :: English",
-        "Operating System :: Microsoft :: Windows :: Windows 10",
-        "Programming Language :: Python :: 3.6",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
         "Topic :: Scientific/Engineering :: Bio-Informatics"
     ],
 
