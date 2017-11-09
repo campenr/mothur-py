@@ -15,9 +15,9 @@ Mothur-py was inspired by the [ipython-mothurmagic](https://github.com/SchlossLa
 intention to provide a more general python wrapper that would work outside of the IPython/Jupyter notebook environment, 
 as well as provide support for mothur's `current` keyword functionality.
 
-**Note:** This module has only been tested with mothur v1.39.5 and python 3.6 on Windows 10 (64-bit). It should in 
-theory work with other versions of mothur, but the older the version the less likely as this module relies upon some of 
-the more recent mothur commands/output to function properly.
+**Note:** This module has only been tested with mothur v1.39.5 and python 3. It should in theory work with older 
+versions of mothur, but the older the version the less likely as this module relies upon some of the more recent mothur 
+commands/output to function properly.
 
 ---
 
@@ -32,7 +32,8 @@ advantage of this method over just running `python setup.py install` is that you
 
 ### Basic Usage
 
-The use of this module requires that mothur is in the users `PATH` environment variable.
+**NOTE:** mothur-py expects mothur to be installed in the users PATH environment variable. If this is not the case you
+will need to tell it where to find the mothur executable. See the configuration section of the README for details.
 
 Use of this module revolves around the `Mothur` class that catches method calls and passes them off to mothur to be run 
 as commands. An instance of the `Mothur` class needs to be created before running any commands:
@@ -60,16 +61,19 @@ strings that match the format that mothur would expect:
     m.summary.single(shared='basic_usage.shared', calc=['nseqs', 'sobs', 'coverage', 'shannon', 'simpson'])
 
 The `Mothur` object saves a record of the current directories and files and the output files from mothur after executing each command.
-These are stored as dictionary attributes of the `Mothur` object and can be accessed easily:
+These are stored as dictionary attributes of the `Mothur` object:
 
     # run a command
     m.summary.seqs(fasta='basic_usage.fasta')
+    
+    # display current mothur files
+    print(m.current_files)
 
     # get current output directory
     out_dir = m.current_dirs['output']
 
-    # get output file
-    with open(m.output_files['summary'][0], 'r') as in_handle:
+    # read in the output file from summary.seqs()
+    with open(os.path.join(out_dir, m.output_files['summary'][0]), 'r') as in_handle:
         in_handle.read()
 
 **NOTE:** Due to the possibility of multiple output files with the same extension the output files are saved as lists within the attribute
@@ -100,9 +104,36 @@ itself.
 
 ### Configuration 
     
-The `Mothur` class stores configuration options for how mothur is executed. These options include `verbosity` to control
-how much output there is, `mothur_seed` to control the seed used by mothur for random number generation, and 
-`suppress_logfile` which suppresses the creation of the mothur logfile.
+The `Mothur` class stores configuration options for how mothur is executed. These options include `mothur_path` to tell
+mothur-py where to find the mothur executable, `verbosity` to control how much output there is, `mothur_seed` to control 
+the seed used by mothur for random number generation, and `suppress_logfile` which suppresses the creation of the mothur
+logfile.
+
+The default for `mothur_path` is `mothur` which will only work if mothur is in your PATH environment variable.
+If it is not then you will need to specify where to find the mothur executable, including the name of the executable 
+itself:
+
+    # configure mothur with executable in current directory on Windows
+    m = Mothur(mothur_path='mothur.exe')
+    
+    # configure mothur with executable in current directory on Linux
+    m = Mothur(mothur_path='./mothur')
+    
+    # configure mothur with executable in alternate directory on Windows
+    m = Mothur(mothur_path='\\path\\to\\mothur.exe')
+    
+Failure to correctly configure the `mothur_path` will usually result in a PermissionError:
+
+    m = Mothur(mothur_path='/not/a/real/path/to/mothur')
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in <module>
+      File ".../mothur_py/core.py", line 199, in __call__
+        p = Popen([self.root_object.mothur_path, '#%s' % commands_str], stdout=PIPE, stderr=STDOUT)
+      File "/usr/lib/python3.5/subprocess.py", line 947, in __init__
+        restore_signals, start_new_session)
+      File "/usr/lib/python3.5/subprocess.py", line 1551, in _execute_child
+        raise child_exception_type(errno_num, err_msg)
+    PermissionError: [Errno 13] Permission denied
 
 When `verbosity` is set to `0` there is no output printed, `1` prints the normal output as would be seen with command 
 line execution (minus the header that contains the mothur version and runtime information), and `2` displays all output
@@ -155,17 +186,40 @@ will resolve to something that mothur accepts. In the above example, the diction
 the path to the `.fasta` file. As a better example of passing python variables as mothur command parameters, you could 
 perform classification of sequences at multiple defined cutoffs as follows:
 
+    from copy import deepcopy
+    
+    # init results container
+    mothur_objs = dict()
+
     # iterate over list off possible cutoff values
-    for cutoff in [70, 80, 90]:   
+    for cutoff in [70, 80, 90]:
+    
+        # make a copy of the original mothur object so we do not make unwanted modifications to the original
+        m_copy = deepcopy(m)
+       
         # save outputs to different folders, but keep input the same
         output_dir = 'cutoff_%s' % cutoff
-        m.set.dir(output=output_dir, input='.')
-        m.classify.seqs(fasta='current', count='current', reference='reference.fasta', taxonomy='referenece.tax',
+        m_copy.set.dir(output=output_dir, input='.')
+        m_copy.classify.seqs(fasta='current', count='current', reference='reference.fasta', taxonomy='referenece.tax',
         cutoff=cutoff)
+        
+        # save to results container
+        mothur_objs[cutoff] = m_copy
         
 This may be a convoluted example, but it demonstrates the functionality well. One note of caution with this approach is 
 that depending on the mothur command and the parameter you are changing, you may be overwriting your output files as you 
-go. This is the reason for saving each output to a different folder in the above example.
+go. This is the reason for saving each output to a different folder in the above example. We also create multiple copies
+of the original mothur object and use those for the command instead so we can continue to use the `current` keyword
+downstream and have it refer to the correct files:
+
+    # using the results container from above
+    for m_ in mothur_objs.values():
+        
+        # run remove.lineage() on each mothur object created previously to remove unwanted taxa
+        # because we saved each classify.seqs command to a different mothur object we can safely use the 'current'
+        # keyword here and know that it refers to the correct file
+        m_.remove.lineage(fasta='current', count='current', taxonomy='current, taxon='unknown')
+    
 
 You can also instantiate a `Mothur` instance with predefined current file and directory dictionaries:
 
@@ -182,12 +236,3 @@ This can be convenient for saving and loading the state of a mothur object to/fr
     # can reload mothur object from the json file
     with open('mothur_object.json', 'r') as in_handle:
         m = Mothur(**json.load(in_handle))
-
-You can also modify the contents of these dictionaries in between mothur commands. In the previous example
-where we classified at different cutoffs, we could have instead controlled the input and output directories in python
-instead of within mothur:
-
-    for cutoff in [70, 80, 90]:   
-        # save outputs to different folders, but keep input the same
-        m.current_dirs['output'] = 'cutoff_%s' % cutoff
-        m.current_dirs['input'] = '.'
