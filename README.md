@@ -11,7 +11,7 @@ See LICENSE.txt for full license conditions.
 A python wrapper for the command line version of the bioinformatics tool 
 [mothur](https://www.mothur.org/).
 
-See the [change log](#change log) at the end of this ReadMe for a full list of changes.
+See the change log at the end of this ReadMe for a full list of changes.
 
 Mothur-py was inspired by the [ipython-mothurmagic](https://github.com/SchlossLab/ipython-mothurmagic) module, but with an
 intention to provide a more general python wrapper that would work outside of the IPython/Jupyter notebook environment, 
