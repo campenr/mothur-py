@@ -220,7 +220,7 @@ class MothurCommand:
                             mothur_warning_flag = True
 
                         # mothur prints error messages starting with a string containing '***'
-                        if '***' in line:
+                        if '[ERROR]' in line:
                             mothur_error_flag = True
 
                         # detecting invalid command as mothur does not specify this is an error but really should do
