@@ -216,7 +216,7 @@ class MothurCommand:
                         # ------- check for warning or error messages in mothur output ------- #
 
                         # mothur prints warning messages starting with a string containing '<<<'
-                        if '<^>' in line:
+                        if '[WARNING]' in line:
                             mothur_warning_flag = True
 
                         # mothur prints error messages starting with a string containing '***'
