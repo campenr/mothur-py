@@ -19,8 +19,8 @@ class Mothur:
 
     """
 
-    def __init__(self, mothur_path='mothur', current_files=None, current_dirs=None, output_files=None, verbosity=0, mothur_seed=None,
-                 suppress_logfile=False):
+    def __init__(self, mothur_path='mothur', current_files=None, current_dirs=None, output_files=None, verbosity=0,
+                 mothur_seed=None, suppress_logfile=False):
         """
 
         :param mothur_path: path to the mothur executable
@@ -186,7 +186,7 @@ class MothurCommand:
                 if not os.path.isfile(logfile_path):
                     logfile = logfile_path
                     break
-        commands.insert(0, 'set.logfile(name=%s)' % logfile)
+        commands.insert(0, 'set.logfile(name=%s, append=T)' % logfile)
 
         # combine commands for mothur execution
         commands_str = '; '.join(commands)
