@@ -9,11 +9,11 @@ For full license terms see LICENSE.txt
 
 from subprocess import PIPE, Popen, STDOUT
 import collections
-import random
 import os
+import random
 
 
-class Mothur:
+class Mothur(object):
     """
     Main class that contains configuration for mothur execution.
 
@@ -73,7 +73,7 @@ class Mothur:
         return '<Mothur object at %s>' % int(id(self))
 
 
-class MothurCommand:
+class MothurCommand(object):
     """
     Callable handler for mothur function calls generated from unknown method calls for `mothur`.
 
@@ -215,11 +215,11 @@ class MothurCommand:
 
                         # ------- check for warning or error messages in mothur output ------- #
 
-                        # mothur prints warning messages starting with a string containing '<<<'
+                        # mothur prints warning messages  on a line containing `[WARNING]`
                         if '[WARNING]' in line:
                             mothur_warning_flag = True
 
-                        # mothur prints error messages starting with a string containing '***'
+                        # mothur prints error messages on a line containing `[ERROR]`
                         if '[ERROR]' in line:
                             mothur_error_flag = True
 
