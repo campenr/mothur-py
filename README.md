@@ -1,6 +1,6 @@
 # mothur-py
 
-Copyright &#169; 2017, Richard Campen. All rights reserved.
+Copyright &#169; 2018, Richard Campen. All rights reserved.
 
 See LICENSE.txt for full license conditions.
 
@@ -105,8 +105,8 @@ itself.
     
 The `Mothur` class stores configuration options for how mothur is executed. These options include `mothur_path` to tell
 mothur-py where to find the mothur executable, `verbosity` to control how much output there is, `mothur_seed` to control 
-the seed used by mothur for random number generation, and `suppress_logfile` which suppresses the creation of the mothur
-logfile.
+the seed used by mothur for random number generation, `logfile_name` to set the name of the mothur logfile, and 
+`suppress_logfile` which suppresses the creation of the mothur logfile.
 
 The default for `mothur_path` is `mothur` which will only work if mothur is in your PATH environment variable.
 If it is not then you will need to specify where to find the mothur executable, including the name of the executable 
@@ -155,6 +155,12 @@ for the execution of that command, e.g.:
     m.help()
     m.mothur_seed = seed
     
+The `logfile_name` option allows the user to specify the name that the mothur logfile will have. As the logfile can be 
+appended to a single logfile can store the record of all operations related to a single Mothur object.
+
+**Note:** When copying mothur objects it is important to then specify different logfiles for them otherwise they
+may attempt to use the same logfile. Additionally, if `suppress_logfile` is true, the logfile will be suppressed even
+if it has been given a name by the user.
 
 The `supress_logfile` option is useful when you don't want the log files, such as when running in an Jupyter (nee 
 IPython) notebook with `verbosity=1`, in which case you already have a record of mothur's output and the mothur logfiles
@@ -239,6 +245,15 @@ This can be convenient for saving and loading the state of a mothur object to/fr
 ---
 
 ### Change Log
+
+#### *v0.3.1*
+
+New features:
+* Allow setting the name of the mothur logfile via configuration of the Mothur object
+
+Bug fixes:
+* Changed strings to match to detect errors and warnings from mothur in stdout
+* Now check both top level and output directories when removing logfile
 
 #### *v0.3.0*
 
