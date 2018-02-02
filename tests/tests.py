@@ -22,7 +22,7 @@ class Test(unittest.TestCase):
         self.init_vars = {
             'suppress_logfile': True,
             'verbosity': 0,
-            'mothur_seed': 54321
+            'mothur_seed': 54321,
         }
 
         # setup directories for testing
@@ -115,12 +115,6 @@ class Test(unittest.TestCase):
         m.pcr.seqs(fasta='test_fasta_1.fasta', start=20, keepdots=True)
 
         return
-
-    # def test_python_iterable(self):
-    #     """Test that python iterables are correctly converted into mothur compatible lists."""
-    #
-    #     return
-
 
     def tearDown(self):
         """Cleans up testing environment."""

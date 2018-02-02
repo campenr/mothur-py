@@ -20,7 +20,7 @@ class Mothur(object):
     """
 
     def __init__(self, mothur_path='mothur', current_files=None, current_dirs=None, output_files=None, verbosity=0,
-                 mothur_seed=None, suppress_logfile=False):
+                 mothur_seed=None, logfile_name=None, suppress_logfile=False):
         """
 
         :param mothur_path: path to the mothur executable
@@ -37,6 +37,8 @@ class Mothur(object):
         :type mothur_seed: int
         :param suppress_logfile: whether to suppress the creation of mothur logfiles
         :type suppress_logfile: bool
+        :param logfile_name: name to give the logfile
+        :type logfile_name: str
 
         ..note:: the default value for mothur_path will work only if mothur is in the PATH environment variable. If
         mothur is located elsewhere, including in the current working directory, then it needs to be specified including
@@ -57,20 +59,73 @@ class Mothur(object):
         self.output_files = output_files
         self.verbosity = verbosity
         self.mothur_seed = mothur_seed
-        self.suppress_logfile = suppress_logfile
 
-    def __getattr__(self, command_name):
+        # need to define these here once so __getattr__ is not called for them
+        self.suppress_logfile = suppress_logfile
+        self.logfile_name = logfile_name
+
+    def __getattribute__(self, item):
+        """
+         Gets attributes.
+
+         Due to the way that @property works when __getattr__ is overloaded we can't use the decorator for getters,
+         so instead we specifically catch calls to __getattribute__ for the logfile_name attributes here instead.
+
+         """
+
+        # we have to overload lookups for 'logfile_name'
+        if item == 'logfile_name':
+            return self._logfile_name
+
+        return super().__getattribute__(item)
+
+    def __getattr__(self, attr_name):
         """Catches unknown method calls to run them as mothur functions instead."""
 
-        if command_name.startswith('_'):
+        if attr_name.startswith('_'):
             # no valid mothur commands begin with underscores
             # also catches checks for potentially non-implemented dunder methods i.e. `__deepcopy__`
-            raise (AttributeError('%s is not a valid mothur function.' % command_name))
+            raise (AttributeError('%s is not a valid mothur function.' % attr_name))
 
-        return MothurCommand(root=self, command_name=command_name)
+        return MothurCommand(root=self, command_name=attr_name)
+
+    def __setattr__(self, key, value):
+        """
+        Sets attributes.
+
+        Due to the way that @property works when __getattr__ is overloaded we can't use the decorator for setters,
+        so instead we specifically catch calls to __setattr__ for the logfile_name attribute here instead.
+
+        """
+
+        if key == 'logfile_name':
+
+            if value is not None:
+                self._logfile_name = value
+            else:
+                # randomly generate a name
+                self._logfile_name = self.generate_logfile_name()
+
+        # otherwise fallback to default behaviour
+        super().__setattr__(key, value)
 
     def __str__(self):
         return '<Mothur object at %s>' % int(id(self))
+
+    @staticmethod
+    def generate_logfile_name():
+        """Generates logfile name for the mothur object."""
+
+        # generate random name, iterating and checking for one that does not exist
+        random.seed()
+        while True:
+            num = random.randint(10000, 99999)
+            # construct random name and check for uniqueness
+            logfile = 'mothur.py.%d.logfile' % num
+            if not os.path.isfile(logfile):
+                break
+
+        return logfile
 
 
 class MothurCommand(object):
@@ -161,6 +216,8 @@ class MothurCommand(object):
         commands = list()
         base_command = '{0}({1})'.format(self.command_name, mothur_args)
         commands.append(base_command)
+
+        # set current files and dirs
         if self.root_object.current_files:
             current_files = ', '.join(['%s=%s' % (k, v) for k, v in self.root_object.current_files.items()])
             commands.insert(0, 'set.current(%s)' % current_files)
@@ -169,24 +226,8 @@ class MothurCommand(object):
             commands.insert(0, 'set.dir(%s)' % current_dirs)
         commands.append('get.current()')
 
-        # create logfile name
-        if self.root_object.suppress_logfile:
-            # force name of mothur logfile
-            logfile = 'mothur.py.logfile'
-        else:
-            random.seed()
-            while True:
-                # iterate random names, checking it does not exists already
-                rn = random.randint(10000, 99999)
-                logfile_path = 'mothur.py.%d.logfile' % rn
-
-                out_dir = self.root_object.current_dirs.get('output', '')
-                if out_dir:
-                    logfile_path = os.path.join(out_dir, logfile_path)
-                if not os.path.isfile(logfile_path):
-                    logfile = logfile_path
-                    break
-        commands.insert(0, 'set.logfile(name=%s, append=T)' % logfile)
+        # set logfile
+        commands.insert(0, 'set.logfile(name=%s, append=T)' % self.root_object.logfile_name)
 
         # combine commands for mothur execution
         commands_str = '; '.join(commands)
@@ -321,17 +362,19 @@ class MothurCommand(object):
 
             # conditionally cleanup logfile
             if self.root_object.suppress_logfile is True:
-                # need to append output directory to logfile path if it has been set else we won't be able to find it
-                out_dir = self.root_object.current_dirs.get('output', '')
-                if out_dir:
-                    logfile = os.path.join(out_dir, logfile)
-
-                # Mothur only renames the logfile to something predictable if exits properly, else this will fail
+                # Mothur only renames the logfile to something predictable if it exits properly, else this will fail
+                # in version 1.39.5 and earlier.
                 # see https://github.com/mothur/mothur/issues/281 and https://github.com/mothur/mothur/issues/377
                 try:
-                    os.remove(logfile)
-                except FileNotFoundError:
-                    print('[mothur-py WARNING]: could not delete mothur logfile. You will need to manually remove it.')
+                    # try remove from top level directory
+                    os.remove(self.root_object.logfile_name)
+                except (FileNotFoundError, PermissionError) :
+                    try:
+                        # try removing from mothur objects output directory
+                        os.remove(os.path.join(self.root_object.current_dirs['output'], self.root_object.logfile_name))
+                    except (FileNotFoundError, PermissionError):
+                        print('[mothur-py WARNING]: could not delete mothur logfile. '
+                              'You will need to manually remove it.')
 
         return
 
