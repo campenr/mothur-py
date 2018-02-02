@@ -155,8 +155,7 @@ for the execution of that command, e.g.:
     m.help()
     m.mothur_seed = seed
     
-The `logfile_name` option allows the user to specify the name that the mothur logfile will have. As the logfile can be 
-appended to a single logfile can store the record of all operations related to a single Mothur object.
+The `logfile_name` option allows the user to specify the name of the mothur generated logfile. The logfile will store the output from all mothur commands executed for the Mothur object it is configured for.
 
 **Note:** When copying mothur objects it is important to then specify different logfiles for them otherwise they
 may attempt to use the same logfile. Additionally, if `suppress_logfile` is true, the logfile will be suppressed even
