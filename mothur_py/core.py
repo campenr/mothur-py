@@ -20,7 +20,7 @@ class Mothur(object):
     """
 
     def __init__(self, mothur_path='mothur', current_files=None, current_dirs=None, output_files=None, verbosity=0,
-                 mothur_seed=None, logfile_name=None, suppress_logfile=False):
+                 mothur_seed=None, logfile_name=None, suppress_logfile=False, line_limit=-1):
         """
 
         :param mothur_path: path to the mothur executable
@@ -35,10 +35,12 @@ class Mothur(object):
         :type verbosity: int
         :param mothur_seed: number for mothur to seed random number generation with
         :type mothur_seed: int
-        :param suppress_logfile: whether to suppress the creation of mothur logfiles
-        :type suppress_logfile: bool
         :param logfile_name: name to give the logfile
         :type logfile_name: str
+        :param suppress_logfile: whether to suppress the creation of mothur logfiles
+        :type suppress_logfile: bool
+        :param line_limit: number of lines to output. -1 outputs all lines
+        :type line_limit: int
 
         ..note:: the default value for mothur_path will work only if mothur is in the PATH environment variable. If
         mothur is located elsewhere, including in the current working directory, then it needs to be specified including
@@ -59,6 +61,7 @@ class Mothur(object):
         self.output_files = output_files
         self.verbosity = verbosity
         self.mothur_seed = mothur_seed
+        self.line_limit = line_limit
 
         # need to define these here once so __getattr__ is not called for them
         self.suppress_logfile = suppress_logfile
@@ -182,6 +185,7 @@ class MothurCommand(object):
         user_input_flag = False
         mothur_warning_flag = False
         mothur_error_flag = False
+        truncate_flag = False
 
         # parsing flags
         parse_current_flag = False
@@ -237,6 +241,9 @@ class MothurCommand(object):
 
         p = Popen([self.root_object.mothur_path, '#%s' % commands_str], stdout=PIPE, stderr=STDOUT)
 
+        # stdout line counter
+        line_count = 0
+
         try:
             with p.stdout:
                 for line in iter(p.stdout.readline, b''):
@@ -276,6 +283,20 @@ class MothurCommand(object):
                             user_input_flag = True
                         elif 'mothur > get.current()' in line:
                             user_input_flag = False
+
+                        # ------- conditionally increment line counter and toggle truncate_flag ------- #
+
+                        # only increment line counter for lines generated from user input
+                        if user_input_flag:
+                            line_count += 1
+
+                        # conditionally set truncate input flag so that we only truncate if a line limit is set
+                        if self.root_object.line_limit != -1:  # -1 signifies no line limit
+                            if line_count > self.root_object.line_limit:
+
+                                # as we only truncate output from user input the truncate_flag is the user_input_flag
+                                # this allows verbosity=2 to show debug information even if line limit has been reached
+                                truncate_flag = user_input_flag
 
                         # ------- conditionally parse current dirs and files from stdout ------- #
 
@@ -329,12 +350,18 @@ class MothurCommand(object):
                         # only print output if verbosity not zero
                         if self.root_object.verbosity > 0:
 
-                            # conditionally print output based on flags
-                            if self.root_object.verbosity == 1:
-                                if any([user_input_flag, mothur_warning_flag, mothur_error_flag]):
+                            # print('LINE_COUNT + TRUNCATE_FLAG: ', line_count, truncate_flag)
+
+                            # only output if below the line limit if truncate_flag is set
+                            if not truncate_flag:
+
+                                # conditionally print output based on flags
+                                if self.root_object.verbosity == 1:
+                                    if any([user_input_flag, mothur_warning_flag, mothur_error_flag]):
+                                        print(line)
+                                elif self.root_object.verbosity == 2:
                                     print(line)
-                            elif self.root_object.verbosity == 2:
-                                print(line)
+
 
             # wait for the subprocess to finish then check for erroneous output or return code
             return_code = p.wait()
@@ -351,15 +378,6 @@ class MothurCommand(object):
             raise(KeyboardInterrupt('User terminated the process.'))
 
         finally:
-            # update root mother object with new current dirs and files
-            for k, v in new_current_dirs.items():
-                self.root_object.current_dirs[k] = v
-            for k, v in new_current_files.items():
-                self.root_object.current_files[k] = v
-
-            # overwrite old output files with latest output files
-            self.root_object.output_files = new_output_files
-
             # conditionally cleanup logfile
             if self.root_object.suppress_logfile is True:
                 # Mothur only renames the logfile to something predictable if it exits properly, else this will fail
@@ -375,6 +393,15 @@ class MothurCommand(object):
                     except (FileNotFoundError, PermissionError):
                         print('[mothur-py WARNING]: could not delete mothur logfile. '
                               'You will need to manually remove it.')
+
+        # update root mother object with new current dirs and files
+        for k, v in new_current_dirs.items():
+            self.root_object.current_dirs[k] = v
+        for k, v in new_current_files.items():
+            self.root_object.current_files[k] = v
+
+        # overwrite old output files with latest output files
+        self.root_object.output_files = new_output_files
 
         return
 
