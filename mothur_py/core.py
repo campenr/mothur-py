@@ -281,8 +281,17 @@ class MothurCommand(object):
                         # user input spans output from the base command until the get.current() command
                         if base_command_query in line:
                             user_input_flag = True
+
+                            if self.root_object.verbosity == 2:
+                                # add in some debug information for easier reading
+                                print('\n#=============[BEGIN USER INPUT]=============#\n')
+
                         elif 'mothur > get.current()' in line:
                             user_input_flag = False
+
+                            if self.root_object.verbosity == 2:
+                                # add in some debug information for easier reading
+                                print('\n#=============[END USER INPUT]=============#\n')
 
                         # ------- conditionally increment line counter and toggle truncate_flag ------- #
 
@@ -290,8 +299,13 @@ class MothurCommand(object):
                         if user_input_flag:
                             line_count += 1
 
+                        # check for incorrect line_limit settings, otherwise it will fail silently
+                        if not -1 <= self.root_object.line_limit:
+                            raise(ValueError('line_limit must be -1, 0, or any positive integer, not %s.' %
+                                             self.root_object.line_limit))
+
                         # conditionally set truncate input flag so that we only truncate if a line limit is set
-                        if self.root_object.line_limit != -1:  # -1 signifies no line limit
+                        elif self.root_object.line_limit != -1:  # -1 signifies no line limit
                             if line_count > self.root_object.line_limit:
 
                                 # as we only truncate output from user input the truncate_flag is the user_input_flag
@@ -350,17 +364,18 @@ class MothurCommand(object):
                         # only print output if verbosity not zero
                         if self.root_object.verbosity > 0:
 
-                            # print('LINE_COUNT + TRUNCATE_FLAG: ', line_count, truncate_flag)
-
                             # only output if below the line limit if truncate_flag is set
                             if not truncate_flag:
-
                                 # conditionally print output based on flags
                                 if self.root_object.verbosity == 1:
                                     if any([user_input_flag, mothur_warning_flag, mothur_error_flag]):
                                         print(line)
                                 elif self.root_object.verbosity == 2:
                                     print(line)
+
+                            # conditionally print message to indicate line limit had been reached
+                            if (self.root_object.line_limit == line_count) and user_input_flag:
+                                print('\n[mothur-py WARNING]: Line limit reached. No more output will be printed.')
 
 
             # wait for the subprocess to finish then check for erroneous output or return code
