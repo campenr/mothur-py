@@ -375,7 +375,7 @@ class MothurCommand(object):
 
                             # conditionally print message to indicate line limit had been reached
                             if (self.root_object.line_limit == line_count) and user_input_flag:
-                                print('\n[mothur-py WARNING]: Line limit reached. No more output will be printed.')
+                                print('\n[mothur-py WARNING]: Line limit reached. No more output will be printed.\n')
 
 
             # wait for the subprocess to finish then check for erroneous output or return code
