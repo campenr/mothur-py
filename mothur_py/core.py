@@ -1,5 +1,5 @@
 """
-Copyright (c) 2017, Richard Campen
+Copyright (c) 2017, 2018 Richard Campen
 All rights reserved.
 
 Licensed under the Modified BSD License.
@@ -7,10 +7,12 @@ For full license terms see LICENSE.txt
 
 """
 
-from subprocess import PIPE, Popen, STDOUT
 import collections
 import os
 import random
+from subprocess import PIPE, Popen, STDOUT
+
+from mothur_py.utils import format_mothur_params
 
 
 class Mothur(object):
@@ -184,7 +186,7 @@ class MothurCommand(object):
         parse_output_flag = False
 
         # other flags
-        mothur_warning_flag = False
+        mothur_warning_flag = False  # we don't actually do anything with this... but we could
         mothur_error_flag = False
 
         # dict containing strings to find in lines, with matching current_dirs keys
@@ -204,8 +206,8 @@ class MothurCommand(object):
         if self.root_object.mothur_seed is not None:
 
             # not all mothur commands are compatible with setting the seed
-            set_seed_uncompt = ['help']
-            if self.command_name not in set_seed_uncompt:
+            set_seed_blacklist = ['help']
+            if self.command_name not in set_seed_blacklist:
 
                 if (len(args) + len(kwargs)) > 0:
                     mothur_args = mothur_args + ',seed=%s' % self.root_object.mothur_seed
@@ -374,7 +376,6 @@ class MothurCommand(object):
                             if (self.root_object.line_limit == line_count) and user_input_flag:
                                 print('\n[mothur-py WARNING]: Line limit reached. No more output will be printed.\n')
 
-
             # wait for the subprocess to finish then check for erroneous output or return code
             return_code = p.wait()
 
@@ -418,60 +419,3 @@ class MothurCommand(object):
         self.root_object.output_files = new_output_files
 
         return
-
-
-def format_mothur_params(*args, **kwargs):
-    """Formats mothur command paramters from python variables into a string formatted for mothur."""
-
-    # list of available converter functions for making python variables mothur compatible
-    converters = [
-        convert_mothur_bool,
-        convert_mothur_iterable
-    ]
-
-    # use the converters to alter parameter values as necessary for mothur compatibility
-    formatted_args = ''
-    if args:
-        for arg in args:
-            for converter in converters:
-                arg = converter(arg)
-        formatted_args = ','.join(args)
-
-    formatted_kwargs = ''
-    if kwargs:
-        for k, v in kwargs.items():
-            for converter in converters:
-                kwargs[k] = converter(v)
-        formatted_kwargs = ','.join('%s=%s' % (k, v) for k, v in kwargs.items())
-
-    # format command string from available command parameters
-    if len(formatted_args) == 0:
-        mothur_args = formatted_kwargs
-    else:
-        mothur_args = formatted_args
-        if len(formatted_kwargs) > 0:
-            mothur_args = mothur_args + ',' + formatted_kwargs
-
-    return mothur_args
-
-
-def convert_mothur_bool(item):
-    """Converts python bool into a format that is compatible with mothur."""
-
-    if item is True:
-        return 'T'
-    elif item is False:
-        return 'F'
-    else:
-        return item
-
-
-def convert_mothur_iterable(item):
-    """Converts python iterable into a format that is compatible with mothur."""
-
-    # convert python iterable, excluding strings, to mothur list
-    if isinstance(item, collections.Sequence) and not isinstance(item, str):
-        # mothur lists are hyphen separated
-        return ('-').join(item)
-    else:
-        return item
