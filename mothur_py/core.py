@@ -112,9 +112,6 @@ class Mothur(object):
         # otherwise fallback to default behaviour
         super().__setattr__(key, value)
 
-    def __str__(self):
-        return '<Mothur object at %s>' % int(id(self))
-
     @staticmethod
     def generate_logfile_name():
         """Generates logfile name for the mothur object."""
@@ -166,10 +163,7 @@ class MothurCommand(object):
         return MothurCommand(self.root_object, '%s.%s' % (self.command_name, command_name))
 
     def __repr__(self):
-        return 'MothurCommand(root=<%s object>, name=%r)' % (self.root_object, self.command_name)
-
-    def __str__(self):
-        return '%s.%s' % (self.root_object, self.command_name)
+        return 'MothurCommand(root=%s, name=%r)' % (self.root_object, self.command_name)
 
     def __call__(self, *args, **kwargs):
         """Catches method calls and formats and executes them as commands within mothur."""
@@ -183,13 +177,15 @@ class MothurCommand(object):
 
         # output flags
         user_input_flag = False
-        mothur_warning_flag = False
-        mothur_error_flag = False
         truncate_flag = False
 
         # parsing flags
         parse_current_flag = False
         parse_output_flag = False
+
+        # other flags
+        mothur_warning_flag = False
+        mothur_error_flag = False
 
         # dict containing strings to find in lines, with matching current_dirs keys
         # mothur prints out the current directory for each category on the same line at the matched string
@@ -239,6 +235,7 @@ class MothurCommand(object):
 
         # --------------- run mothur --------------- #
 
+        # setup process
         p = Popen([self.root_object.mothur_path, '#%s' % commands_str], stdout=PIPE, stderr=STDOUT)
 
         # stdout line counter
@@ -356,7 +353,7 @@ class MothurCommand(object):
                         # so we do this check AFTER parsing output file information from the line
                         # we also check the user_input_flag to avoid saving output files from the background
                         # commands that are run to enable the 'current' keyword functionality
-                        if 'Output File Names:' in line and user_input_flag:
+                        if ('Output File Names:' in line) and user_input_flag:
                             parse_output_flag = True
 
                         # ------- conditionally print stdout from mothur to screen ------- #
@@ -368,7 +365,7 @@ class MothurCommand(object):
                             if not truncate_flag:
                                 # conditionally print output based on flags
                                 if self.root_object.verbosity == 1:
-                                    if any([user_input_flag, mothur_warning_flag, mothur_error_flag]):
+                                    if user_input_flag:
                                         print(line)
                                 elif self.root_object.verbosity == 2:
                                     print(line)
@@ -401,7 +398,7 @@ class MothurCommand(object):
                 try:
                     # try remove from top level directory
                     os.remove(self.root_object.logfile_name)
-                except (FileNotFoundError, PermissionError) :
+                except (FileNotFoundError, PermissionError):
                     try:
                         # try removing from mothur objects output directory
                         os.remove(os.path.join(self.root_object.current_dirs['output'], self.root_object.logfile_name))
@@ -410,12 +407,14 @@ class MothurCommand(object):
                               'You will need to manually remove it.')
 
         # update root mother object with new current dirs and files
+        # we do this here so that current files/dirs only update after successful execution
         for k, v in new_current_dirs.items():
             self.root_object.current_dirs[k] = v
         for k, v in new_current_files.items():
             self.root_object.current_files[k] = v
 
         # overwrite old output files with latest output files
+        # we do this here so that current files/dirs only update after successful execution
         self.root_object.output_files = new_output_files
 
         return
