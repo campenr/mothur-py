@@ -105,8 +105,9 @@ itself.
     
 The `Mothur` class stores configuration options for how mothur is executed. These options include `mothur_path` to tell
 mothur-py where to find the mothur executable, `verbosity` to control how much output there is, `mothur_seed` to control 
-the seed used by mothur for random number generation, `logfile_name` to set the name of the mothur logfile, and 
-`suppress_logfile` which suppresses the creation of the mothur logfile.
+the seed used by mothur for random number generation, `logfile_name` to set the name of the mothur logfile, 
+`suppress_logfile` which suppresses the creation of the mothur logfile, and `line_limit` which sets the limit on how
+many lines of stdout will be printed.
 
 The default for `mothur_path` is `mothur` which will only work if mothur is in your PATH environment variable.
 If it is not then you will need to specify where to find the mothur executable, including the name of the executable 
@@ -134,15 +135,15 @@ Failure to correctly configure the `mothur_path` will usually result in a Permis
         raise child_exception_type(errno_num, err_msg)
     PermissionError: [Errno 13] Permission denied
 
-When `verbosity` is set to `0` there is no output printed, `1` prints the normal output as would be seen with command 
+When `verbosity` is set to `0` (default) there is no output printed, `1` prints the normal output as would be seen with command 
 line execution (minus the header that contains the mothur version and runtime information), and `2` displays all output
 including the commands being executed behind the scenes to enable the `current` keyword to work. The default option is 
 `0`, with `1` being useful when you want to see the standard mothur output, and `2` being useful for debugging purposes. 
 
 If `mothur_seed` is set to a valid integer then this number will be passed to mothur to be used for random number
-generation. This is implemented by adding the `seed=<your seed here>` named parameter to each mothur command. Not all 
-commands will accept having a seed set. For these commands you may need to set the `mothur_seed` parameter to `None`
-for the execution of that command, e.g.:
+generation. This is implemented by adding the `seed=<your seed here>` named parameter to each mothur command. By default
+ no seed is set (`mothur_seed=None`). Not all commands will accept having a seed set. For these commands you may need to 
+ set the `mothur_seed` parameter to `None` for the execution of that command, e.g.:
  
     m = Mothur(mothur_seed=12345)
     
@@ -155,7 +156,9 @@ for the execution of that command, e.g.:
     m.help()
     m.mothur_seed = seed
     
-The `logfile_name` option allows the user to specify the name of the mothur generated logfile. The logfile will store the output from all mothur commands executed for the Mothur object it is configured for.
+The `logfile_name` option allows the user to specify the name of the mothur generated logfile. The logfile will store 
+the output from all mothur commands executed for the Mothur object it is configured for. When set to `None` (default) a
+random logfile name is generated for the mothur object in the format `mothur.py.<random_5_digit_number>.logfile`.
 
 **Note:** When copying mothur objects it is important to then specify different logfiles for them otherwise they
 may attempt to use the same logfile. Additionally, if `suppress_logfile` is true, the logfile will be suppressed even
@@ -163,16 +166,27 @@ if it has been given a name by the user.
 
 The `supress_logfile` option is useful when you don't want the log files, such as when running in an Jupyter (nee 
 IPython) notebook with `verbosity=1`, in which case you already have a record of mothur's output and the mothur logfiles
-are superfluous.
+are superfluous. Default setting is `False`.
 
 **Note:** Currently, due to the way that mothur creates the logfiles, a logfile will always be created BUT it will be 
 cleaned up upon successful execution if `suppress_logfile=True`. However, if mothur fails to successfully execute, i.e. 
 execution hangs or is interrupted, the logfile will not be cleaned up. For relevant discussion of this behaviour in 
 mothur see [here](https://github.com/mothur/mothur/issues/281) and [here](https://github.com/mothur/mothur/issues/377).
 
+The `line_limit` option is useful when the full stdout is not wanted, or when printing it will be problematic, such as
+when stdout is excessive and causes memory issues in the Jupyter (nee IPython) notebook environment. Setting `line_limit`
+to `-1` (default) imposes no line limit, while any positive integer (or zero) imposes a line limit that causes stdout to no
+longer be printed once the limit is reaches. If the line limit is reached then a warning is printed to notify the user.
+
+**Note:** Only lines related to the user specified command count towards the line limit, therefore commands running
+in the background (viewable with verbosity == 2) do not count towards this limit. Additionally, when verbosity == 2
+the additional commands that enable the `current` keyword functionality that are executed after the users command are 
+still displayed, even if the line limit has been reached. Setting a line limit does not change what is printed to the 
+logfile.
+
 You can also instantiate the `Mothur` object with your desired configuration options.
 
-    m = Mothur(verbosity=1, mothur_seed=543210, suppress_logfile=True)
+    m = Mothur(verbosity=1, mothur_seed=543210, suppress_logfile=True, line_limit=1000)
     
 ---
 
@@ -244,6 +258,23 @@ This can be convenient for saving and loading the state of a mothur object to/fr
 ---
 
 ### Change Log
+
+#### *v0.4.0*
+
+New features:
+* Added a line limit configuration option to limit the amount of stdout printed to screen. Helps with potential memory
+issues when outputting in Jupyter (nee IPython) notebook
+
+Big fixes:
+* Current files/dirs and output are now only set after successful execution to prevent them being changed when mothur 
+errors
+
+Changes:
+* Added lines of text specifying transition from user input functions from background functions enabling the current
+keyword functionality when verbosity == 2
+* For verbosity == 1, now does not print redundant warning/error text at the end of stdout
+* Split utility functions out into their own file (`mothur_py.utils`)
+* Refined `__str__` and `__repr__` for Mothur and MothurCommand
 
 #### *v0.3.1*
 
