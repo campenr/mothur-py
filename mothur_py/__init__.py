@@ -7,6 +7,6 @@ For full license terms see LICENSE.txt
 
 """
 
-__version__ = '0.3.0'
+__version__ = '0.4.0'
 
 from .core import Mothur, MothurCommand
